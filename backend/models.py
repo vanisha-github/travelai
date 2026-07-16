@@ -32,49 +32,129 @@ class TripRequest(BaseModel):
 
 
 class WeatherInfo(BaseModel):
-    temperature: float = Field(description="Temperature in Celsius")
-    humidity: int = Field(description="Humidity percentage")
-    condition: str = Field(description="Weather condition description")
+    temperature: float = Field(default=0, description="Temperature in Celsius")
+    feels_like: float = Field(default=0, description="Feels like temperature")
+    humidity: int = Field(default=0, description="Humidity percentage")
+    condition: str = Field(default="N/A", description="Weather condition")
+    description: str = Field(default="", description="Weather description")
+    wind_speed: float = Field(default=0, description="Wind speed in m/s")
+    rain_chance: Optional[int] = Field(default=None, description="Rain chance percentage (None if unavailable)")
+    sunrise: str = Field(default="", description="Sunrise time")
+    sunset: str = Field(default="", description="Sunset time")
+    icon: str = Field(default="☀️", description="Weather emoji icon")
+    pressure: Optional[int] = Field(default=None, description="Atmospheric pressure in hPa")
+    visibility: Optional[int] = Field(default=None, description="Visibility in meters")
+    cloud_pct: Optional[int] = Field(default=None, description="Cloud cover percentage")
+    uv_index: Optional[float] = Field(default=None, description="UV index")
     suggestions: list[str] = Field(default_factory=list, description="AI weather suggestions")
 
 
 class HotelRecommendation(BaseModel):
     name: str = Field(description="Hotel name")
-    rating: float = Field(description="Hotel rating out of 5")
-    price_per_night: float = Field(description="Approximate price per night in USD")
-    location: str = Field(description="Hotel location")
-    reason: str = Field(description="Why this hotel is recommended")
+    rating: float = Field(default=0, description="Hotel rating out of 5")
+    price_per_night: float = Field(default=0, description="Price per night in USD")
+    location: str = Field(default="", description="Hotel location/address")
+    reason: str = Field(default="", description="Why recommended")
+    amenities: list[str] = Field(default_factory=list, description="Hotel amenities")
+    description: str = Field(default="", description="Brief description")
+    pros: list[str] = Field(default_factory=list, description="Pros of this hotel")
+    cons: list[str] = Field(default_factory=list, description="Cons of this hotel")
+    image_url: str = Field(default="", description="Hotel image URL")
+    maps_url: str = Field(default="", description="Google Maps link")
+    website_url: str = Field(default="", description="Official website")
+    distance_from_center: str = Field(default="", description="Distance from city center")
+
+
+class AttractionRecommendation(BaseModel):
+    name: str = Field(description="Attraction name")
+    description: str = Field(default="", description="What it is")
+    category: str = Field(default="", description="Category (museum, park, etc)")
+    rating: float = Field(default=0, description="Rating out of 5")
+    entry_fee: str = Field(default="", description="Entry fee")
+    opening_hours: str = Field(default="", description="Opening hours")
+    time_required: str = Field(default="", description="Time needed to visit")
+    best_time: str = Field(default="", description="Best time to visit")
+    image_url: str = Field(default="", description="Attraction image URL")
+    maps_url: str = Field(default="", description="Google Maps link")
+    website_url: str = Field(default="", description="Official website")
+
+
+class RestaurantRecommendation(BaseModel):
+    name: str = Field(description="Restaurant name")
+    cuisine: str = Field(default="", description="Type of cuisine")
+    rating: float = Field(default=0, description="Rating out of 5")
+    price_range: str = Field(default="", description="Price range ($, $$, $$$)")
+    description: str = Field(default="", description="Why AI recommends it")
+    opening_hours: str = Field(default="", description="Opening hours")
+    image_url: str = Field(default="", description="Restaurant image URL")
+    maps_url: str = Field(default="", description="Google Maps link")
+    website_url: str = Field(default="", description="Official website")
+
+
+class TransportOption(BaseModel):
+    mode: str = Field(description="Transport mode (metro, bus, taxi, walking, etc)")
+    description: str = Field(default="", description="Details and tips")
+    estimated_time: str = Field(default="", description="Estimated travel time")
+    estimated_cost: str = Field(default="", description="Estimated cost")
+    tips: str = Field(default="", description="Local tips")
+
+
+class AIInsights(BaseModel):
+    hidden_gems: list[str] = Field(default_factory=list, description="Hidden gems")
+    tourist_traps: list[str] = Field(default_factory=list, description="Tourist traps to avoid")
+    local_food: list[str] = Field(default_factory=list, description="Must-try local food")
+    safety_tips: list[str] = Field(default_factory=list, description="Safety advice")
+    money_tips: list[str] = Field(default_factory=list, description="Money-saving tips")
+    scam_alerts: list[str] = Field(default_factory=list, description="Common scams to avoid")
+    photography_spots: list[str] = Field(default_factory=list, description="Best photography spots")
+    sunrise_spots: list[str] = Field(default_factory=list, description="Best sunrise/sunset spots")
 
 
 class BudgetBreakdown(BaseModel):
-    hotel: float = Field(description="Hotel cost")
-    food: float = Field(description="Food cost")
-    transport: float = Field(description="Transport cost")
-    activities: float = Field(description="Activities cost")
-    miscellaneous: float = Field(description="Miscellaneous cost")
-    total: float = Field(description="Total estimated cost")
-    within_budget: bool = Field(description="Whether estimate is within budget")
+    hotel: float = Field(default=0, description="Hotel cost")
+    food: float = Field(default=0, description="Food cost")
+    transport: float = Field(default=0, description="Transport cost")
+    activities: float = Field(default=0, description="Activities cost")
+    miscellaneous: float = Field(default=0, description="Miscellaneous cost")
+    total: float = Field(default=0, description="Total estimated cost")
+    per_person: float = Field(default=0, description="Per person cost")
+    within_budget: bool = Field(default=True, description="Within budget")
+    remaining: float = Field(default=0, description="Remaining budget")
     suggestions: list[str] = Field(default_factory=list, description="Cost-saving suggestions")
 
 
 class DayPlan(BaseModel):
     day_number: int = Field(description="Day number")
-    morning: str = Field(description="Morning activities")
-    afternoon: str = Field(description="Afternoon activities")
-    evening: str = Field(description="Evening activities")
-    estimated_daily_cost: float = Field(description="Estimated cost for this day")
+    title: str = Field(default="", description="Day theme/title")
+    morning: str = Field(default="", description="Morning activities")
+    afternoon: str = Field(default="", description="Afternoon activities")
+    evening: str = Field(default="", description="Evening activities")
+    night: str = Field(default="", description="Night activities")
+    lunch: str = Field(default="", description="Lunch recommendation")
+    dinner: str = Field(default="", description="Dinner recommendation")
+    estimated_daily_cost: float = Field(default=0, description="Estimated cost")
+    highlights: list[str] = Field(default_factory=list, description="Day highlights")
 
 
 class ItineraryResponse(BaseModel):
-    trip_summary: str = Field(description="Overall trip summary")
-    destination_overview: str = Field(description="Destination overview")
-    weather_summary: WeatherInfo = Field(description="Weather information")
-    recommended_hotels: list[HotelRecommendation] = Field(description="Hotel recommendations")
-    budget: BudgetBreakdown = Field(description="Budget breakdown")
-    daily_plans: list[DayPlan] = Field(description="Day-by-day itinerary")
-    travel_tips: list[str] = Field(default_factory=list, description="Travel tips")
-    things_to_carry: list[str] = Field(default_factory=list, description="Packing suggestions")
-    best_times: list[str] = Field(default_factory=list, description="Best times to visit attractions")
+    trip_summary: str = Field(default="", description="Overall trip summary")
+    destination_overview: str = Field(default="", description="Destination overview")
+    destination_image: str = Field(default="", description="Main destination image URL")
+    destination_gallery: list[str] = Field(default_factory=list, description="Gallery image URLs")
+    weather_summary: WeatherInfo = Field(default_factory=WeatherInfo)
+    recommended_hotels: list[HotelRecommendation] = Field(default_factory=list)
+    attractions: list[AttractionRecommendation] = Field(default_factory=list)
+    restaurants: list[RestaurantRecommendation] = Field(default_factory=list)
+    transport_options: list[TransportOption] = Field(default_factory=list)
+    budget: BudgetBreakdown = Field(default_factory=BudgetBreakdown)
+    daily_plans: list[DayPlan] = Field(default_factory=list)
+    ai_insights: AIInsights = Field(default_factory=AIInsights)
+    travel_tips: list[str] = Field(default_factory=list)
+    things_to_carry: list[str] = Field(default_factory=list)
+    packing_checklist: dict[str, list[str]] = Field(default_factory=dict, description="Grouped packing list")
+    best_times: list[str] = Field(default_factory=list)
+    trip_score: int = Field(default=85, description="AI trip score out of 100")
+    score_reasons: list[dict[str, str]] = Field(default_factory=list, description="Score breakdown reasons")
 
 
 class HealthResponse(BaseModel):

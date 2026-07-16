@@ -37,7 +37,7 @@ class WeatherService:
                 resp.raise_for_status()
                 data = resp.json()
 
-            return {
+            result = {
                 "city": data.get("name", city),
                 "temperature": data["main"]["temp"],
                 "feels_like": data["main"]["feels_like"],
@@ -45,14 +45,52 @@ class WeatherService:
                 "condition": data["weather"][0]["main"],
                 "description": data["weather"][0]["description"],
                 "wind_speed": data["wind"]["speed"],
+                "pressure": data["main"].get("pressure"),
+                "visibility": data.get("visibility"),
+                "clouds": data.get("clouds", {}).get("all"),
                 "error": False,
             }
+
+            rain_data = data.get("rain", {})
+            result["rain_chance"] = rain_data.get("1h", rain_data.get("3h", None))
+
+            await self._enrich_with_forecast(city, result)
+
+            return result
         except httpx.HTTPStatusError as e:
             logger.error("OpenWeather API error: %s", e.response.status_code)
             return {"city": city, "error": True, "description": f"API error: {e.response.status_code}"}
         except Exception as e:
             logger.error("Weather fetch failed: %s", e)
             return {"city": city, "error": True, "description": str(e)}
+
+    async def _enrich_with_forecast(self, city: str, result: dict) -> None:
+        """Enrich current weather with forecast data (rain chance, sunrise/sunset)."""
+        try:
+            url = "https://api.openweathermap.org/data/2.5/forecast"
+            params = {"q": city, "appid": self.settings.openweather_api_key, "units": "metric", "cnt": 8}
+            async with httpx.AsyncClient(timeout=10) as client:
+                resp = await client.get(url, params=params)
+                resp.raise_for_status()
+                data = resp.json()
+
+            if result.get("rain_chance") is None:
+                pop_values = [item.get("pop", 0) for item in data.get("list", []) if item.get("pop")]
+                if pop_values:
+                    result["rain_chance"] = round(max(pop_values) * 100)
+
+            city_data = data.get("city", {})
+            sunrise_ts = city_data.get("sunrise", 0)
+            sunset_ts = city_data.get("sunset", 0)
+            if sunrise_ts:
+                from datetime import datetime
+                result["sunrise"] = datetime.fromtimestamp(sunrise_ts).strftime("%I:%M %p")
+            if sunset_ts:
+                from datetime import datetime
+                result["sunset"] = datetime.fromtimestamp(sunset_ts).strftime("%I:%M %p")
+
+        except Exception as e:
+            logger.warning("Forecast enrichment failed: %s", e)
 
 
 class SerpService:
