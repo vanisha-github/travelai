@@ -153,6 +153,7 @@ aitravelnew/
 | `SERP_API_KEY` | SerpAPI key for web search | Yes | — |
 | `OPENWEATHER_API_KEY` | OpenWeatherMap API key | Yes | — |
 | `GEMINI_MODEL` | Gemini model to use | No | `gemini-3.1-flash-lite` |
+| `BACKEND_URL` | Frontend-to-backend URL | No | `http://localhost:8000` |
 | `HOST` | Backend server host | No | `0.0.0.0` |
 | `PORT` | Backend server port | No | `8000` |
 
