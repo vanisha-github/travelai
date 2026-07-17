@@ -371,24 +371,44 @@ border-radius:50px;font-size:0.78rem;color:#fff;font-weight:500;}
 @media(max-width:768px){
     /* 1. Top padding — prevent Streamlit header overlap */
     .block-container{
-        padding-top:3.5rem !important;
+        padding-top:4.5rem !important;
         padding-left:0.75rem !important;
         padding-right:0.75rem !important;
         padding-bottom:0.75rem !important;
         max-width:100% !important;
+    }
+    section[data-testid="stHeader"]{
+        background:var(--bg) !important;
     }
 
     /* 2. Accordion/expander titles — prevent text spilling outside */
     [data-testid="stExpander"]{
         margin-left:0 !important;
         transform:none !important;
+        overflow:visible !important;
     }
-    [data-testid="stExpander"] summary{
-        padding-left:1rem !important;
+    [data-testid="stExpander"] summary,
+    [data-testid="stExpander"] summary > div,
+    [data-testid="stExpander"] summary > div > span,
+    [data-testid="stExpander"] summary > div > div,
+    [data-testid="stExpander"] summary p{
         transform:none !important;
+        margin-left:0 !important;
+        padding-left:0 !important;
         overflow:visible !important;
         text-overflow:unset !important;
         white-space:normal !important;
+        word-wrap:break-word !important;
+        overflow-wrap:break-word !important;
+        max-width:100% !important;
+    }
+    [data-testid="stExpander"] summary{
+        padding:0.6rem 1rem !important;
+        min-height:44px !important;
+    }
+    [data-testid="stExpander"] summary svg{
+        flex-shrink:0 !important;
+        margin-right:0.5rem !important;
     }
 
     /* 3. Sidebar — accessible via Streamlit hamburger on mobile */
@@ -542,7 +562,7 @@ border-radius:50px;font-size:0.78rem;color:#fff;font-weight:500;}
 /* ─── RESPONSIVE: Small phones ───────────────────────────────────────── */
 @media(max-width:480px){
     .block-container{
-        padding-top:3.2rem !important;
+        padding-top:4.5rem !important;
         padding-left:0.5rem !important;
         padding-right:0.5rem !important;
     }
@@ -591,6 +611,26 @@ border-radius:50px;font-size:0.78rem;color:#fff;font-weight:500;}
 .hl-subtle:hover{box-shadow:0 4px 12px rgba(124,58,237,0.1)!important}
 .lk:hover{background:#EDE9FE!important}
 .lk-f:hover{opacity:0.9!important}
+</style>""", unsafe_allow_html=True)
+
+st.markdown("""<div id="mobile-menu-btn" title="Open sidebar menu"
+onclick="(function(){var b=document.querySelector('[data-testid=stSidebarCollapseButton]');if(b){b.click();return;}var b2=document.querySelector('[data-testid=collapsedControl] button');if(b2){b2.click();return;}var s=document.querySelector('section[data-testid=stSidebar]');if(s){s.style.transform=s.style.transform==='translateX(0px)'?'translateX(-100%)':'translateX(0px)';}})()">
+<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</div>
+<style>
+@media(min-width:769px){#mobile-menu-btn{display:none !important;}}
+@media(max-width:768px){
+#mobile-menu-btn{
+    display:flex !important;position:fixed !important;top:0.65rem !important;left:0.65rem !important;
+    z-index:1002 !important;width:42px !important;height:42px !important;
+    background:linear-gradient(135deg,#7C3AED,#6366F1) !important;color:#fff !important;
+    border-radius:11px !important;align-items:center !important;justify-content:center !important;
+    cursor:pointer !important;box-shadow:0 3px 12px rgba(124,58,237,0.45) !important;
+    border:none !important;transition:all 0.2s ease !important;
+    -webkit-tap-highlight-color:transparent !important;
+}
+#mobile-menu-btn:active{transform:scale(0.92) !important;box-shadow:0 2px 8px rgba(124,58,237,0.3) !important;}
+}
 </style>""", unsafe_allow_html=True)
 
 
