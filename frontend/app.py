@@ -362,16 +362,224 @@ border-radius:50px;font-size:0.78rem;color:#fff;font-weight:500;}
 .score-label{font-size:0.72rem;color:rgba(255,255,255,0.7);min-width:100px;}
 .score-pts{font-size:0.72rem;color:rgba(255,255,255,0.9);font-weight:600;min-width:36px;text-align:right;}
 
-/* Mobile */
-@media(max-width:768px){
-    .block-container{padding:0.8rem !important;max-width:100% !important;}
-    section[data-testid="stSidebar"]{display:none !important;}
-    .wx-grid{grid-template-columns:repeat(2,1fr);}
-    .wx-extra{grid-template-columns:repeat(2,1fr);}
+/* ─── RESPONSIVE: Tablet ─────────────────────────────────────────────── */
+@media(max-width:1024px){
+    .block-container{max-width:100% !important;}
 }
+
+/* ─── RESPONSIVE: Mobile ─────────────────────────────────────────────── */
+@media(max-width:768px){
+    /* 1. Top padding — prevent Streamlit header overlap */
+    .block-container{
+        padding-top:3.5rem !important;
+        padding-left:0.75rem !important;
+        padding-right:0.75rem !important;
+        padding-bottom:0.75rem !important;
+        max-width:100% !important;
+    }
+
+    /* 2. Accordion/expander titles — prevent text spilling outside */
+    [data-testid="stExpander"]{
+        margin-left:0 !important;
+        transform:none !important;
+    }
+    [data-testid="stExpander"] summary{
+        padding-left:1rem !important;
+        transform:none !important;
+        overflow:visible !important;
+        text-overflow:unset !important;
+        white-space:normal !important;
+    }
+
+    /* 3. Sidebar — accessible via Streamlit hamburger on mobile */
+    section[data-testid="stSidebar"]{
+        display:block !important;
+        z-index:999 !important;
+    }
+    section[data-testid="stSidebar"] > div{
+        padding-top:1.5rem !important;
+    }
+
+    /* 4. Hero section — stack vertically */
+    .hero-flex{
+        flex-direction:column !important;
+        align-items:stretch !important;
+        gap:0.8rem !important;
+    }
+    .hero-info{
+        min-width:0 !important;
+    }
+    .hero-info [style*="font-size:2.6rem"]{
+        font-size:clamp(1.5rem,5vw,2.2rem) !important;
+        letter-spacing:-0.5px !important;
+    }
+    .hero-score{
+        align-self:center !important;
+        width:100% !important;
+        box-sizing:border-box !important;
+        padding:1rem 1.2rem !important;
+    }
+    .score-ring-box{
+        width:90px !important;
+        height:90px !important;
+    }
+    .score-ring .score-val{font-size:1.4rem !important;}
+    .score-ring .score-lbl{font-size:0.5rem !important;margin-top:1.8rem !important;}
+
+    /* 5. Tabs — scrollable with touch-friendly 44px targets */
+    .stTabs [data-baseweb="tab-list"]{
+        padding:3px !important;
+        gap:3px !important;
+        -webkit-overflow-scrolling:touch !important;
+    }
+    .stTabs [data-baseweb="tab"]{
+        padding:0.45rem 0.75rem !important;
+        font-size:0.72rem !important;
+        min-height:44px !important;
+    }
+    .stTabs>div>div>div{
+        padding:1rem !important;
+        border-radius:0 0 14px 14px !important;
+    }
+
+    /* 6. Cards — prevent horizontal overflow */
+    [data-testid="stExpander"],
+    [data-testid="stVerticalBlockBorderWrapper"]{
+        max-width:100% !important;
+        box-sizing:border-box !important;
+        overflow:hidden !important;
+    }
+
+    /* 7. Hotel/Attraction/Food link buttons — stack vertically on mobile */
+    .link-btns{
+        display:flex !important;
+        flex-direction:column !important;
+        gap:0.3rem !important;
+    }
+    .link-btns a{
+        display:block !important;
+        text-align:center !important;
+        margin:0 !important;
+        padding:0.55rem 0.75rem !important;
+    }
+
+    /* 8. Day itinerary — fix text wrapping */
+    [data-testid="stExpander"] summary span{
+        word-wrap:break-word !important;
+        overflow-wrap:break-word !important;
+    }
+
+    /* 10. Statistics / all Streamlit column blocks — 2 columns on mobile */
+    [data-testid="stHorizontalBlock"]{
+        grid-template-columns:repeat(2,1fr) !important;
+        gap:0.5rem !important;
+    }
+
+    /* 11. Images — responsive */
+    img{
+        max-width:100% !important;
+        height:auto !important;
+        object-fit:cover !important;
+    }
+
+    /* 12. Typography — responsive via clamp */
+    [style*="font-family:'Playfair Display'"][style*="font-size:1.3rem"]{
+        font-size:1.05rem !important;
+    }
+    [style*="font-size:3.5rem"][style*="font-weight:800"][style*="Playfair"]{
+        font-size:clamp(1.5rem,5vw,2.2rem) !important;
+    }
+    [style*="font-size:4rem"][style*="margin-bottom:0.5rem"]{
+        font-size:2.5rem !important;
+    }
+    [style*="font-size:2.2rem"][style*="font-weight:800"]{
+        font-size:1.6rem !important;
+    }
+    [style*="font-size:1.3rem"][style*="font-weight:700"][style*="Playfair"]{
+        font-size:1.05rem !important;
+    }
+
+    /* 13. Touch targets — min-height 44px */
+    .stButton>button{
+        min-height:44px !important;
+        font-size:0.9rem !important;
+    }
+
+    /* Weather section */
+    .wx-hero{
+        padding:1.2rem 1rem !important;
+        border-radius:16px !important;
+    }
+    .wx-hero .wx-icon-anim{
+        font-size:3rem !important;
+    }
+    .wx-hero [style*="font-size:4.5rem"]{
+        font-size:clamp(2rem,8vw,3rem) !important;
+    }
+    .wx-grid{grid-template-columns:repeat(2,1fr) !important;}
+    .wx-extra{grid-template-columns:repeat(2,1fr) !important;}
+    .wx-card{padding:0.7rem 0.5rem !important;}
+    .wx-card .wx-ic{font-size:1.3rem !important;}
+    .wx-card .wx-val{font-size:0.95rem !important;}
+    .wx-badge{font-size:0.7rem !important;padding:0.2rem 0.5rem !important;}
+
+    /* Welcome hero */
+    [style*="font-size:3.5rem"][style*="font-weight:800"][style*="Playfair"]{
+        font-size:clamp(1.5rem,5vw,2.2rem) !important;
+    }
+
+    /* Transport columns */
+    [style*="text-align:center"][style*="background:#EDE9FE"]{
+        padding:0.6rem !important;
+    }
+
+    /* Budget status card */
+    [style*="font-size:2.2rem"][style*="font-weight:800"]{
+        font-size:1.6rem !important;
+    }
+}
+
+/* ─── RESPONSIVE: Small phones ───────────────────────────────────────── */
 @media(max-width:480px){
-    .wx-grid{grid-template-columns:1fr;}
-    .wx-extra{grid-template-columns:1fr;}
+    .block-container{
+        padding-top:3.2rem !important;
+        padding-left:0.5rem !important;
+        padding-right:0.5rem !important;
+    }
+
+    /* Weather — single column */
+    .wx-grid{grid-template-columns:1fr !important;}
+    .wx-extra{grid-template-columns:1fr !important;}
+    .wx-hero{padding:0.8rem 0.6rem !important;}
+    .wx-hero .wx-icon-anim{font-size:2.2rem !important;}
+    .wx-card{padding:0.5rem 0.3rem !important;}
+    .wx-badge{font-size:0.65rem !important;}
+
+    /* Score ring — smaller on tiny screens */
+    .score-ring-box{width:72px !important;height:72px !important;}
+    .score-ring .score-val{font-size:1.1rem !important;}
+    .score-ring .score-lbl{display:none !important;}
+
+    /* Tabs — tighter on small phones */
+    .stTabs [data-baseweb="tab"]{
+        padding:0.35rem 0.6rem !important;
+        font-size:0.68rem !important;
+        min-height:44px !important;
+    }
+    .stTabs>div>div>div{padding:0.7rem !important;}
+
+    /* Buttons — full width on small phones */
+    .stButton>button{
+        width:100% !important;
+        min-height:44px !important;
+    }
+
+    /* Score breakdown — tighter labels */
+    .score-label{font-size:0.6rem !important;min-width:70px !important;}
+    .score-pts{font-size:0.6rem !important;min-width:28px !important;}
+
+    /* Hero score card */
+    .hero-score{padding:0.8rem !important;}
 }
 
 /* Card hover — replaces JS event handlers stripped by Streamlit sanitizer */
@@ -750,16 +958,16 @@ def render_hero(itin, req):
     box-shadow:0 10px 36px rgba(124,58,237,0.28);">
     <div style="position:absolute;top:-40%;right:-15%;width:50%;height:180%;
     background:radial-gradient(circle,rgba(255,255,255,0.07) 0%,transparent 70%);pointer-events:none;"></div>
-    <div style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
-    <div style="flex:1;min-width:300px;">
+    <div class="hero-flex" style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+    <div class="hero-info" style="flex:1;min-width:300px;">
     <div style="font-family:'Playfair Display',serif;font-size:2.6rem;font-weight:800;letter-spacing:-1px;">{flag} {esc(dest)}</div>
     <div style="font-size:1rem;color:rgba(255,255,255,0.82);margin:0.3rem 0 1rem 0;">{esc(src)} → {esc(dest)} · {days} days · {travelers} traveler{"s" if travelers!=1 else ""}</div>
     <div style="display:flex;flex-wrap:wrap;gap:0.45rem;">{badges}</div>
     </div>
-    <div style="text-align:center;background:rgba(255,255,255,0.12);backdrop-filter:blur(14px);
+    <div class="hero-score" style="text-align:center;background:rgba(255,255,255,0.12);backdrop-filter:blur(14px);
     border:1.5px solid rgba(255,255,255,0.2);border-radius:20px;padding:1.2rem 1.8rem;">
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
-    <div style="position:relative;width:120px;height:120px;">
+    <div class="score-ring-box" style="position:relative;width:120px;height:120px;">
     {ring_svg}
     <div style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;color:#fff;line-height:1;">{score}</div>
     </div>
@@ -954,7 +1162,7 @@ def render_hotels(hotels, dest=""):
         {'<div style="margin:0.5rem 0;">'+am_html+'</div>' if am_html else ''}
         <p style="color:#374151;font-size:0.9rem;margin:0.4rem 0;line-height:1.5;">{sanitize_text(reason)}</p>
         {'<div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin:0.4rem 0;"><div>'+pros_html+'</div><div>'+cons_html+'</div></div>' if pros_html or cons_html else ''}
-        <div style="margin-top:0.6rem;">{links}</div>
+        <div class="link-btns" style="margin-top:0.6rem;">{links}</div>
         </div>""", unsafe_allow_html=True)
 
 
@@ -993,7 +1201,7 @@ def render_attractions(attrs, dest=""):
         </div></div>
         <p style="color:#374151;font-size:0.88rem;margin:0.3rem 0;line-height:1.5;">{sanitize_text(desc)}</p>
         {'<div style="color:#6B7280;font-size:0.8rem;">'+' · '.join(details)+'</div>' if details else ''}
-        <div style="margin-top:0.4rem;">{links}</div>
+        <div class="link-btns" style="margin-top:0.4rem;">{links}</div>
         </div>""", unsafe_allow_html=True)
 
 
@@ -1100,7 +1308,7 @@ def render_food(rests, dest=""):
         </div>
         {'<p style="color:#374151;font-size:0.85rem;margin:0.3rem 0;line-height:1.5;">'+sanitize_text(desc)+'</p>' if desc else ''}
         {'<div style="color:#6B7280;font-size:0.78rem;">🕐 '+sanitize_text(hours)+'</div>' if hours else ''}
-        <div style="margin-top:0.4rem;">{links}</div>
+        <div class="link-btns" style="margin-top:0.4rem;">{links}</div>
         </div>""", unsafe_allow_html=True)
 
 
