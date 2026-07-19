@@ -77,7 +77,16 @@ def sanitize_text(t):
     t = strip_html(t)
     t = re.sub(r"```json.*?```", "", t, flags=re.DOTALL)
     t = re.sub(r"```\s*.*?```", "", t, flags=re.DOTALL)
-    t = re.sub(r'\{[^{}]*"[^"]*"[^{}]*\}', "", t)
+    for _ in range(5):
+        prev = t
+        t = re.sub(r'\{[^{}]{0,500}\}', "", t)
+        if t == prev:
+            break
+    t = re.sub(r'\[[\s\S]{0,300}\]', "", t)
+    t = re.sub(r'"[a-zA-Z_]+"\s*:\s*(?:,|\}|null|""|0|\[\])', "", t)
+    t = re.sub(r'\{\s*,', "{", t)
+    t = re.sub(r',\s*\}', "}", t)
+    t = re.sub(r'\{\s*\}', "", t)
     t = re.sub(r"\n{3,}", "\n\n", t)
     t = re.sub(r"[<>]", "", t)
     return t.strip()
@@ -155,31 +164,31 @@ def clean_display(t):
 # ─── CSS ──────────────────────────────────────────────────────────────────────
 
 st.markdown("""<style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Playfair+Display:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-:root{--pri:#7C3AED;--pri2:#6366F1;--priL:#A78BFA;--priXL:#EDE9FE;--priXX:#F5F0FF;
---bg:#F8F5FF;--card:#fff;--txt:#1E1B4B;--txt2:#374151;--txt3:#6B7280;--txt4:#9CA3AF;
---bdr:#E5DEFF;--bdr2:#DDD6FE;--grn:#22C55E;--grnL:#DCFCE7;--org:#F59E0B;--orgL:#FFEDD5;
---red:#EF4444;--redL:#FEE2E2;--blu:#0EA5E9;--bluL:#E0F2FE;--pnk:#EC4899;--pnkL:#FFF1F2;
---ind:#6366F1;--indL:#E0E7FF;}
+:root{
+--pri:#4F46E5;--pri2:#4338CA;--priL:#818CF8;--priXL:#EEF2FF;--priXX:#F5F7FF;
+--bg:#F8FAFC;--card:#FFFFFF;--txt:#0F172A;--txt2:#334155;--txt3:#64748B;--txt4:#94A3B8;
+--bdr:#E2E8F0;--bdr2:#CBD5E1;--grn:#059669;--grnL:#ECFDF5;--org:#D97706;--orgL:#FFFBEB;
+--red:#DC2626;--redL:#FEF2F2;--blu:#0284C7;--bluL:#F0F9FF;--pnk:#DB2777;--pnkL:#FDF2F8;
+--ind:#4F46E5;--indL:#EEF2FF;
+}
 
-*{font-family:'DM Sans',system-ui,sans-serif !important;}
+*{font-family:'Inter',system-ui,-apple-system,sans-serif !important;}
 .block-container{padding-top:1.5rem !important;padding-bottom:1rem !important;max-width:1100px !important;}
 .stApp{background:var(--bg) !important;}
 .stApp>header{background:transparent !important;}
-section[data-testid="stSidebar"]{background:#fff !important;border-right:1.5px solid var(--bdr) !important;}
+section[data-testid="stSidebar"]{background:#fff !important;border-right:1px solid var(--bdr) !important;}
 section[data-testid="stSidebar"]>div{padding-top:1rem !important;}
 
-/* Tabs — premium glassmorphism */
+/* Tabs — clean, minimal */
 .stTabs [data-baseweb="tab-list"]{
-    gap:4px !important;
-    background:linear-gradient(135deg,rgba(245,240,255,0.7),rgba(237,233,254,0.5)) !important;
-    backdrop-filter:blur(12px) !important;
-    -webkit-backdrop-filter:blur(12px) !important;
-    border:1.5px solid rgba(221,214,254,0.6) !important;
-    border-radius:16px !important;
+    gap:2px !important;
+    background:var(--bg) !important;
+    border:1px solid var(--bdr) !important;
+    border-radius:10px !important;
     padding:4px !important;
-    box-shadow:inset 0 1px 2px rgba(255,255,255,0.6),0 2px 8px rgba(124,58,237,0.06) !important;
+    box-shadow:none !important;
     overflow-x:auto !important;
     overflow-y:hidden !important;
     scroll-behavior:smooth !important;
@@ -189,178 +198,158 @@ section[data-testid="stSidebar"]>div{padding-top:1rem !important;}
 }
 .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar{display:none !important;}
 .stTabs [data-baseweb="tab"]{
-    border-radius:12px !important;
-    padding:0.5rem 1.1rem !important;
-    font-weight:600 !important;
-    font-size:0.78rem !important;
+    border-radius:8px !important;
+    padding:0.5rem 1rem !important;
+    font-weight:500 !important;
+    font-size:0.8rem !important;
     color:var(--txt3) !important;
-    border:1.5px solid transparent !important;
+    border:1px solid transparent !important;
     background:transparent !important;
     white-space:nowrap !important;
-    transition:all 0.25s cubic-bezier(0.4,0,0.2,1) !important;
+    transition:all 0.2s ease !important;
     position:relative !important;
     min-width:fit-content !important;
 }
 .stTabs [data-baseweb="tab"]:hover{
-    color:var(--pri) !important;
-    background:rgba(124,58,237,0.06) !important;
-    border-color:rgba(124,58,237,0.12) !important;
-    transform:translateY(-1px) !important;
-    box-shadow:0 2px 8px rgba(124,58,237,0.1) !important;
+    color:var(--txt) !important;
+    background:rgba(79,70,229,0.04) !important;
 }
 .stTabs [aria-selected="true"]{
-    background:linear-gradient(135deg,var(--pri) 0%,var(--pri2) 100%) !important;
+    background:var(--pri) !important;
     color:#fff !important;
     border-color:transparent !important;
-    box-shadow:0 3px 12px rgba(124,58,237,0.3),inset 0 1px 0 rgba(255,255,255,0.15) !important;
-    font-weight:700 !important;
-    transform:translateY(-1px) !important;
+    box-shadow:0 1px 3px rgba(79,70,229,0.2) !important;
+    font-weight:600 !important;
 }
 .stTabs [data-baseweb="tab-highlight"]{display:none !important;}
 .stTabs [data-baseweb="tab-border"]{display:none !important;}
 .stTabs>div>div>div{
     background:var(--card) !important;
-    border:1.5px solid var(--bdr) !important;
+    border:1px solid var(--bdr) !important;
     border-top:none !important;
-    border-radius:0 0 18px 18px !important;
+    border-radius:0 0 12px 12px !important;
     padding:1.8rem !important;
-    box-shadow:0 4px 16px rgba(124,58,237,0.04) !important;
+    box-shadow:none !important;
 }
 
 /* Buttons */
-.stButton>button{border-radius:12px !important;font-weight:600 !important;border:none !important;transition:all 0.25s !important;}
+.stButton>button{border-radius:8px !important;font-weight:500 !important;border:none !important;transition:all 0.2s ease !important;}
 .stButton>button[kind="primary"]{
-    background:linear-gradient(135deg,var(--pri) 0%,var(--pri2) 100%) !important;color:#fff !important;
-    box-shadow:0 4px 14px rgba(124,58,237,0.35) !important;
+    background:var(--pri) !important;color:#fff !important;
+    box-shadow:0 1px 3px rgba(79,70,229,0.2) !important;
 }
-.stButton>button[kind="primary"]:hover{box-shadow:0 6px 22px rgba(124,58,237,0.5) !important;transform:translateY(-1px) !important;}
-.stButton>button[kind="secondary"]{background:var(--priXX) !important;color:var(--pri) !important;border:1.5px solid var(--bdr2) !important;}
-.stButton>button[kind="secondary"]:hover{background:var(--priXL) !important;}
+.stButton>button[kind="primary"]:hover{background:var(--pri2) !important;box-shadow:0 2px 6px rgba(79,70,229,0.3) !important;}
+.stButton>button[kind="secondary"]{background:var(--card) !important;color:var(--txt2) !important;border:1px solid var(--bdr) !important;}
+.stButton>button[kind="secondary"]:hover{background:var(--bg) !important;border-color:var(--bdr2) !important;}
 
 /* Expanders */
-[data-testid="stExpander"]{background:var(--card) !important;border:1.5px solid var(--bdr) !important;border-radius:14px !important;margin-bottom:0.6rem !important;box-shadow:0 1px 4px rgba(124,58,237,0.05) !important;transition:all 0.25s !important;}
-[data-testid="stExpander"] summary{font-weight:600 !important;font-size:1rem !important;}
-[data-testid="stExpander"]:hover{border-color:var(--priL) !important;box-shadow:0 3px 12px rgba(124,58,237,0.1) !important;}
+[data-testid="stExpander"]{background:var(--card) !important;border:1px solid var(--bdr) !important;border-radius:10px !important;margin-bottom:0.6rem !important;box-shadow:none !important;transition:all 0.2s ease !important;}
+[data-testid="stExpander"] summary{font-weight:600 !important;font-size:0.95rem !important;color:var(--txt) !important;}
+[data-testid="stExpander"]:hover{border-color:var(--bdr2) !important;}
 
 /* Progress & Inputs */
-.stProgress>div>div>div{background:linear-gradient(90deg,var(--pri),var(--pri2)) !important;border-radius:10px !important;}
-.stTextInput>div>div>input,.stNumberInput>div>div>input{border-radius:10px !important;border:1.5px solid var(--bdr2) !important;}
-.stTextInput>div>div>input:focus,.stNumberInput>div>div>input:focus{border-color:var(--pri) !important;box-shadow:0 0 0 2px rgba(124,58,237,0.12) !important;}
-.stMultiSelect>div>div{border-color:var(--bdr2) !important;border-radius:10px !important;}
+.stProgress>div>div>div{background:var(--pri) !important;border-radius:6px !important;}
+.stTextInput>div>div>input,.stNumberInput>div>div>input{border-radius:8px !important;border:1px solid var(--bdr) !important;font-size:0.9rem !important;}
+.stTextInput>div>div>input:focus,.stNumberInput>div>div>input:focus{border-color:var(--pri) !important;box-shadow:0 0 0 2px rgba(79,70,229,0.1) !important;}
+.stMultiSelect>div>div{border-color:var(--bdr) !important;border-radius:8px !important;}
 .stRadio>div{gap:0.3rem !important;}
 
-/* Animations */
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+/* Animations — subtle */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
-@keyframes shimmer{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
-@keyframes scaleIn{from{transform:scale(0.92);opacity:0;}to{transform:scale(1);opacity:1;}}
-@keyframes countUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-@keyframes gradientShift{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
-.anim-fade-up{animation:fadeUp 0.5s ease-out both;}
-.anim-fade-in{animation:fadeIn 0.4s ease-out both;}
-.anim-scale-in{animation:scaleIn 0.4s ease-out both;}
-.anim-delay-1{animation-delay:0.1s;}.anim-delay-2{animation-delay:0.2s;}.anim-delay-3{animation-delay:0.3s;}
-.anim-delay-4{animation-delay:0.4s;}.anim-delay-5{animation-delay:0.5s;}
-
-/* Skeleton loading */
-.skel{background:linear-gradient(90deg,#EDE9FE 25%,#F5F0FF 50%,#EDE9FE 75%);background-size:200% 100%;
-animation:shimmer 1.5s infinite;border-radius:12px;}
+@keyframes scaleIn{from{opacity:0;}to{opacity:1;}}
+.anim-fade-up{animation:fadeUp 0.4s ease-out both;}
+.anim-fade-in{animation:fadeIn 0.35s ease-out both;}
+.anim-scale-in{animation:scaleIn 0.35s ease-out both;}
+.anim-delay-1{animation-delay:0.05s;}.anim-delay-2{animation-delay:0.1s;}.anim-delay-3{animation-delay:0.15s;}
+.anim-delay-4{animation-delay:0.2s;}.anim-delay-5{animation-delay:0.25s;}
 
 /* Score ring */
 .score-ring{position:relative;display:inline-flex;align-items:center;justify-content:center;}
 .score-ring svg{transform:rotate(-90deg);}
-.score-ring .score-val{position:absolute;font-size:2rem;font-weight:800;color:#fff;line-height:1;}
-.score-ring .score-lbl{position:absolute;font-size:0.6rem;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:2px;margin-top:2.6rem;}
+.score-ring .score-val{position:absolute;font-size:1.8rem;font-weight:700;color:#fff;line-height:1;}
+.score-ring .score-lbl{position:absolute;font-size:0.55rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:1.5px;margin-top:2.4rem;}
 
-/* Weather hero card */
-.wx-hero{background:linear-gradient(135deg,#0EA5E9 0%,#0284C7 30%,#0369A1 60%,#075985 100%);
-border-radius:22px;padding:2rem 2.5rem;color:#fff;position:relative;overflow:hidden;
-box-shadow:0 12px 40px rgba(14,165,233,0.3);margin-bottom:1rem;}
-.wx-hero::before{content:'';position:absolute;top:-50%;right:-20%;width:60%;height:200%;
-background:radial-gradient(circle,rgba(255,255,255,0.08) 0%,transparent 70%);pointer-events:none;}
-.wx-hero::after{content:'';position:absolute;bottom:-30%;left:-10%;width:40%;height:150%;
-background:radial-gradient(circle,rgba(255,255,255,0.05) 0%,transparent 70%);pointer-events:none;}
+/* Weather hero card — muted professional blue */
+.wx-hero{background:linear-gradient(135deg,#0F172A 0%,#1E293B 50%,#0F172A 100%);
+border-radius:14px;padding:1.8rem 2rem;color:#fff;position:relative;overflow:hidden;
+box-shadow:0 1px 3px rgba(0,0,0,0.1);margin-bottom:1rem;}
+.wx-hero::before{content:'';position:absolute;top:-40%;right:-15%;width:50%;height:180%;
+background:radial-gradient(circle,rgba(14,165,233,0.08) 0%,transparent 70%);pointer-events:none;}
 
 /* Weather detail cards */
-.wx-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0.8rem;}
-.wx-card{background:rgba(255,255,255,0.12);backdrop-filter:blur(12px);
-border:1.5px solid rgba(255,255,255,0.18);border-radius:16px;
-padding:1rem 0.6rem;text-align:center;transition:all 0.3s ease;
-animation:fadeUp 0.5s ease-out both;}
-.wx-card:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,0.15);
-background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.35);}
-.wx-card .wx-ic{font-size:1.6rem;line-height:1;margin-bottom:0.3rem;}
-.wx-card .wx-val{font-size:1.1rem;font-weight:700;color:#fff;line-height:1.2;}
-.wx-card .wx-lbl{font-size:0.62rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.8px;margin-top:0.15rem;}
+.wx-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0.6rem;}
+.wx-card{background:rgba(255,255,255,0.06);
+border:1px solid rgba(255,255,255,0.1);border-radius:10px;
+padding:0.9rem 0.5rem;text-align:center;transition:all 0.2s ease;
+animation:fadeUp 0.4s ease-out both;}
+.wx-card:hover{background:rgba(255,255,255,0.1);}
+.wx-card .wx-ic{font-size:1.3rem;line-height:1;margin-bottom:0.25rem;}
+.wx-card .wx-val{font-size:0.95rem;font-weight:600;color:#fff;line-height:1.2;}
+.wx-card .wx-lbl{font-size:0.6rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;margin-top:0.1rem;}
 
 /* Weather extra data row */
-.wx-extra{display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;margin-top:0.6rem;}
-.wx-extra-card{background:rgba(255,255,255,0.08);backdrop-filter:blur(8px);
-border:1px solid rgba(255,255,255,0.12);border-radius:12px;
-padding:0.6rem 0.5rem;text-align:center;font-size:0.75rem;color:rgba(255,255,255,0.75);
-transition:all 0.25s;animation:fadeUp 0.5s ease-out both;}
-.wx-extra-card:hover{background:rgba(255,255,255,0.14);transform:translateY(-2px);}
-.wx-extra-card span{font-weight:700;color:#fff;display:block;font-size:0.85rem;}
+.wx-extra{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-top:0.5rem;}
+.wx-extra-card{background:rgba(255,255,255,0.04);
+border:1px solid rgba(255,255,255,0.08);border-radius:8px;
+padding:0.5rem 0.4rem;text-align:center;font-size:0.72rem;color:rgba(255,255,255,0.6);
+transition:all 0.2s;animation:fadeUp 0.4s ease-out both;}
+.wx-extra-card:hover{background:rgba(255,255,255,0.08);}
+.wx-extra-card span{font-weight:600;color:#fff;display:block;font-size:0.8rem;}
 
 /* Weather tips */
-.wx-tip{background:rgba(255,255,255,0.1);backdrop-filter:blur(8px);
-border:1px solid rgba(255,255,255,0.15);border-radius:12px;
-padding:0.55rem 0.8rem;margin-bottom:0.35rem;font-size:0.82rem;color:rgba(255,255,255,0.85);
-display:flex;align-items:center;gap:0.5rem;animation:fadeUp 0.4s ease-out both;
-transition:all 0.2s;}
-.wx-tip:hover{background:rgba(255,255,255,0.16);}
+.wx-tip{background:rgba(255,255,255,0.05);
+border:1px solid rgba(255,255,255,0.08);border-radius:8px;
+padding:0.5rem 0.7rem;margin-bottom:0.3rem;font-size:0.78rem;color:rgba(255,255,255,0.75);
+display:flex;align-items:center;gap:0.5rem;animation:fadeUp 0.35s ease-out both;}
+.wx-tip:hover{background:rgba(255,255,255,0.08);}
 
 /* Tab scroll container */
 .tab-scroll-wrap{position:relative;overflow:hidden;}
 .tab-scroll-btn{position:absolute;top:50%;transform:translateY(-50%);z-index:10;
-width:34px;height:34px;border-radius:50%;border:none;cursor:pointer;
-background:linear-gradient(135deg,#7C3AED,#6366F1);color:#fff;font-size:0.75rem;
-box-shadow:0 3px 10px rgba(124,58,237,0.35);transition:all 0.25s cubic-bezier(0.4,0,0.2,1);
-display:flex;align-items:center;justify-content:center;
-backdrop-filter:blur(6px);}
-.tab-scroll-btn:hover{background:linear-gradient(135deg,#6D28D9,#4F46E5);transform:translateY(-50%) scale(1.12);
-box-shadow:0 5px 16px rgba(124,58,237,0.45);}
+width:32px;height:32px;border-radius:8px;border:1px solid var(--bdr);cursor:pointer;
+background:var(--card);color:var(--txt3);font-size:0.7rem;
+box-shadow:0 1px 3px rgba(0,0,0,0.08);transition:all 0.2s ease;
+display:flex;align-items:center;justify-content:center;}
+.tab-scroll-btn:hover{background:var(--bg);color:var(--txt);border-color:var(--bdr2);}
 .tab-scroll-btn:active{transform:translateY(-50%) scale(0.95);}
 .tab-scroll-btn.left{left:6px;}
 .tab-scroll-btn.right{right:6px;}
 .tab-scroll-btn.hidden{display:none;opacity:0;pointer-events:none;}
-.tab-fade-left,.tab-fade-right{position:absolute;top:0;bottom:0;width:48px;z-index:5;
-pointer-events:none;transition:opacity 0.35s ease;}
-.tab-fade-left{left:44px;background:linear-gradient(to right,rgba(248,245,255,1),transparent);opacity:0;}
-.tab-fade-right{right:0;background:linear-gradient(to left,rgba(248,245,255,1),transparent);opacity:0;}
+.tab-fade-left,.tab-fade-right{position:absolute;top:0;bottom:0;width:40px;z-index:5;
+pointer-events:none;transition:opacity 0.3s ease;}
+.tab-fade-left{left:40px;background:linear-gradient(to right,var(--card),transparent);opacity:0;}
+.tab-fade-right{right:0;background:linear-gradient(to left,var(--card),transparent);opacity:0;}
 .tab-fade-left.show,.tab-fade-right.show{opacity:1;}
 
 /* Score ring animation */
 @keyframes scoreReveal{from{stroke-dashoffset:var(--circ);}to{stroke-dashoffset:var(--offset);}}
-.score-ring circle.score-arc{animation:scoreReveal 1.2s cubic-bezier(0.4,0,0.2,1) forwards;}
+.score-ring circle.score-arc{animation:scoreReveal 1s ease-out forwards;}
 
 /* Condition & feels-like badges */
-.wx-badge{display:inline-flex;align-items:center;gap:0.25rem;background:rgba(255,255,255,0.15);
-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.2);padding:0.25rem 0.7rem;
-border-radius:50px;font-size:0.78rem;color:#fff;font-weight:500;}
+.wx-badge{display:inline-flex;align-items:center;gap:0.2rem;background:rgba(255,255,255,0.1);
+border:1px solid rgba(255,255,255,0.12);padding:0.2rem 0.6rem;
+border-radius:6px;font-size:0.75rem;color:rgba(255,255,255,0.85);font-weight:500;}
 
-/* Weather card fade in stagger */
+/* Weather card stagger */
 .wx-card:nth-child(1){animation-delay:0s;}
-.wx-card:nth-child(2){animation-delay:0.08s;}
-.wx-card:nth-child(3){animation-delay:0.16s;}
-.wx-card:nth-child(4){animation-delay:0.24s;}
-.wx-card:nth-child(5){animation-delay:0.32s;}
-.wx-extra-card:nth-child(1){animation-delay:0.4s;}
-.wx-extra-card:nth-child(2){animation-delay:0.48s;}
-.wx-extra-card:nth-child(3){animation-delay:0.56s;}
+.wx-card:nth-child(2){animation-delay:0.05s;}
+.wx-card:nth-child(3){animation-delay:0.1s;}
+.wx-card:nth-child(4){animation-delay:0.15s;}
+.wx-card:nth-child(5){animation-delay:0.2s;}
+.wx-extra-card:nth-child(1){animation-delay:0.25s;}
+.wx-extra-card:nth-child(2){animation-delay:0.3s;}
+.wx-extra-card:nth-child(3){animation-delay:0.35s;}
 
-/* Weather icon pulse */
-@keyframes iconFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
-.wx-icon-anim{animation:iconFloat 3s ease-in-out infinite;display:inline-block;}
+.wx-icon-anim{display:inline-block;}
 
-/* Score breakdown expand */
-.score-breakdown{margin-top:0.6rem;}
-.score-row{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;}
-.score-bar-track{flex:1;height:6px;background:rgba(255,255,255,0.15);border-radius:3px;overflow:hidden;}
-.score-bar-fill{height:100%;border-radius:3px;transition:width 1.2s cubic-bezier(0.4,0,0.2,1);}
-.score-label{font-size:0.72rem;color:rgba(255,255,255,0.7);min-width:100px;}
-.score-pts{font-size:0.72rem;color:rgba(255,255,255,0.9);font-weight:600;min-width:36px;text-align:right;}
+/* Score breakdown */
+.score-breakdown{margin-top:0.5rem;}
+.score-row{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.35rem;}
+.score-bar-track{flex:1;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;overflow:hidden;}
+.score-bar-fill{height:100%;border-radius:2px;transition:width 1s ease-out;}
+.score-label{font-size:0.68rem;color:rgba(255,255,255,0.6);min-width:100px;}
+.score-pts{font-size:0.68rem;color:rgba(255,255,255,0.8);font-weight:600;min-width:36px;text-align:right;}
 
 /* ─── RESPONSIVE: Tablet ─────────────────────────────────────────────── */
 @media(max-width:1024px){
@@ -429,9 +418,9 @@ border-radius:50px;font-size:0.78rem;color:#fff;font-weight:500;}
     .hero-info{
         min-width:0 !important;
     }
-    .hero-info [style*="font-size:2.6rem"]{
-        font-size:clamp(1.5rem,5vw,2.2rem) !important;
-        letter-spacing:-0.5px !important;
+    .hero-info [style*="font-size:2.2rem"]{
+        font-size:clamp(1.4rem,4vw,2rem) !important;
+        letter-spacing:-0.3px !important;
     }
     .hero-score{
         align-self:center !important;
@@ -502,21 +491,9 @@ border-radius:50px;font-size:0.78rem;color:#fff;font-weight:500;}
         object-fit:cover !important;
     }
 
-    /* 12. Typography — responsive via clamp */
-    [style*="font-family:'Playfair Display'"][style*="font-size:1.3rem"]{
-        font-size:1.05rem !important;
-    }
-    [style*="font-size:3.5rem"][style*="font-weight:800"][style*="Playfair"]{
-        font-size:clamp(1.5rem,5vw,2.2rem) !important;
-    }
-    [style*="font-size:4rem"][style*="margin-bottom:0.5rem"]{
-        font-size:2.5rem !important;
-    }
-    [style*="font-size:2.2rem"][style*="font-weight:800"]{
-        font-size:1.6rem !important;
-    }
-    [style*="font-size:1.3rem"][style*="font-weight:700"][style*="Playfair"]{
-        font-size:1.05rem !important;
+    /* 12. Typography — responsive */
+    .hero-info [style*="font-size:2.2rem"]{
+        font-size:clamp(1.4rem,4vw,2.2rem) !important;
     }
 
     /* 13. Touch targets — min-height 44px */
@@ -533,8 +510,8 @@ border-radius:50px;font-size:0.78rem;color:#fff;font-weight:500;}
     .wx-hero .wx-icon-anim{
         font-size:3rem !important;
     }
-    .wx-hero [style*="font-size:4.5rem"]{
-        font-size:clamp(2rem,8vw,3rem) !important;
+    .wx-hero [style*="font-size:3.5rem"]{
+        font-size:clamp(1.8rem,7vw,2.5rem) !important;
     }
     .wx-grid{grid-template-columns:repeat(2,1fr) !important;}
     .wx-extra{grid-template-columns:repeat(2,1fr) !important;}
@@ -544,12 +521,12 @@ border-radius:50px;font-size:0.78rem;color:#fff;font-weight:500;}
     .wx-badge{font-size:0.7rem !important;padding:0.2rem 0.5rem !important;}
 
     /* Welcome hero */
-    [style*="font-size:3.5rem"][style*="font-weight:800"][style*="Playfair"]{
-        font-size:clamp(1.5rem,5vw,2.2rem) !important;
+    [style*="font-size:1.8rem"][style*="font-weight:700"]{
+        font-size:clamp(1.3rem,4vw,1.8rem) !important;
     }
 
     /* Transport columns */
-    [style*="text-align:center"][style*="background:#EDE9FE"]{
+    [style*="text-align:center"][style*="background:#F1F5F9"]{
         padding:0.6rem !important;
     }
 
@@ -602,34 +579,35 @@ border-radius:50px;font-size:0.78rem;color:#fff;font-weight:500;}
     .hero-score{padding:0.8rem !important;}
 }
 
-/* Card hover — replaces JS event handlers stripped by Streamlit sanitizer */
-.hl:hover{box-shadow:0 8px 24px rgba(124,58,237,0.15)!important;transform:translateY(-4px)!important;border-color:#C4B5FD!important}
-.hl-sm:hover{box-shadow:0 6px 18px rgba(124,58,237,0.12)!important;transform:translateY(-3px)!important;border-color:#C4B5FD!important}
-.hl-xs:hover{box-shadow:0 4px 14px rgba(124,58,237,0.15)!important;transform:translateY(-2px)!important}
-.hl-pk:hover{box-shadow:0 4px 16px rgba(236,72,153,0.12)!important;border-color:#EC4899!important}
-.hl-or:hover{box-shadow:0 4px 14px rgba(249,115,22,0.12)!important}
-.hl-subtle:hover{box-shadow:0 4px 12px rgba(124,58,237,0.1)!important}
-.lk:hover{background:#EDE9FE!important}
-.lk-f:hover{opacity:0.9!important}
+/* Card hover — subtle professional */
+.hl:hover{box-shadow:0 4px 12px rgba(0,0,0,0.06)!important;border-color:var(--bdr2)!important}
+.hl-sm:hover{box-shadow:0 2px 8px rgba(0,0,0,0.05)!important;border-color:var(--bdr2)!important}
+.hl-xs:hover{box-shadow:0 2px 6px rgba(0,0,0,0.04)!important}
+.hl-pk:hover{border-color:#F9A8D4!important}
+.hl-or:hover{border-color:#FCD34D!important}
+.hl-subtle:hover{box-shadow:0 2px 8px rgba(0,0,0,0.04)!important}
+.lk:hover{background:var(--bg)!important}
+.lk-f:hover{opacity:0.85!important}
 </style>""", unsafe_allow_html=True)
 
 st.markdown("""<div id="mobile-menu-btn" title="Open sidebar menu"
 onclick="(function(){var b=document.querySelector('[data-testid=stSidebarCollapseButton]');if(b){b.click();return;}var b2=document.querySelector('[data-testid=collapsedControl] button');if(b2){b2.click();return;}var s=document.querySelector('section[data-testid=stSidebar]');if(s){s.style.transform=s.style.transform==='translateX(0px)'?'translateX(-100%)':'translateX(0px)';}})()">
-<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
 </div>
 <style>
 @media(min-width:769px){#mobile-menu-btn{display:none !important;}}
 @media(max-width:768px){
 #mobile-menu-btn{
     display:flex !important;position:fixed !important;top:0.65rem !important;left:0.65rem !important;
-    z-index:1002 !important;width:42px !important;height:42px !important;
-    background:linear-gradient(135deg,#7C3AED,#6366F1) !important;color:#fff !important;
-    border-radius:11px !important;align-items:center !important;justify-content:center !important;
-    cursor:pointer !important;box-shadow:0 3px 12px rgba(124,58,237,0.45) !important;
-    border:none !important;transition:all 0.2s ease !important;
+    z-index:1002 !important;width:40px !important;height:40px !important;
+    background:var(--card) !important;color:var(--txt2) !important;
+    border:1px solid var(--bdr) !important;border-radius:10px !important;
+    align-items:center !important;justify-content:center !important;
+    cursor:pointer !important;box-shadow:0 1px 3px rgba(0,0,0,0.08) !important;
+    transition:all 0.2s ease !important;
     -webkit-tap-highlight-color:transparent !important;
 }
-#mobile-menu-btn:active{transform:scale(0.92) !important;box-shadow:0 2px 8px rgba(124,58,237,0.3) !important;}
+#mobile-menu-btn:active{background:var(--bg) !important;}
 }
 </style>""", unsafe_allow_html=True)
 
@@ -637,59 +615,48 @@ onclick="(function(){var b=document.querySelector('[data-testid=stSidebarCollaps
 # ─── WELCOME SCREEN ───────────────────────────────────────────────────────────
 
 def render_welcome():
-    st.markdown("""<div class="anim-fade-up" style="background:linear-gradient(135deg,#7C3AED 0%,#6366F1 40%,#8B5CF6 70%,#A78BFA 100%);
-    background-size:200% 200%;animation:gradientShift 6s ease infinite;
-    border-radius:24px;padding:3.5rem 3rem;color:#fff;position:relative;overflow:hidden;margin-bottom:2rem;
-    box-shadow:0 16px 48px rgba(124,58,237,0.3);">
-    <div style="position:absolute;top:-30%;right:-10%;width:45%;height:160%;
-    background:radial-gradient(circle,rgba(255,255,255,0.08) 0%,transparent 70%);pointer-events:none;"></div>
-    <div style="position:absolute;bottom:-20%;left:-5%;width:30%;height:120%;
-    background:radial-gradient(circle,rgba(255,255,255,0.05) 0%,transparent 70%);pointer-events:none;"></div>
+    st.markdown("""<div class="anim-fade-up" style="background:#0F172A;
+    border-radius:14px;padding:3rem 2.5rem;color:#fff;position:relative;overflow:hidden;margin-bottom:1.5rem;
+    box-shadow:0 1px 3px rgba(0,0,0,0.1);">
     <div style="position:relative;z-index:1;text-align:center;">
-    <div style="font-size:4rem;margin-bottom:0.5rem;">✈️</div>
-    <div style="font-family:'Playfair Display',serif;font-size:3.5rem;font-weight:800;letter-spacing:-1.5px;margin-bottom:0.5rem;
-    text-shadow:0 2px 10px rgba(0,0,0,0.1);">AI Travel Planner</div>
-    <div style="font-size:1.2rem;color:rgba(255,255,255,0.85);margin-bottom:0;">Plan smarter journeys with AI.</div>
+    <div style="font-size:1.8rem;font-weight:700;letter-spacing:-0.5px;margin-bottom:0.4rem;">AI Travel Planner</div>
+    <div style="font-size:0.95rem;color:#94A3B8;max-width:420px;margin:0 auto;">Plan data-driven trips with real weather, curated hotels, and smart budgets.</div>
     </div></div>""", unsafe_allow_html=True)
 
-    st.markdown("<div style='margin-top:1.5rem;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top:1rem;'></div>", unsafe_allow_html=True)
 
     cols = st.columns([1, 2, 1])
     with cols[1]:
-        st.markdown("""<div class="anim-scale-in" style="background:#fff;border:1.5px solid #E5DEFF;border-radius:20px;
-        padding:2.5rem 2rem;text-align:center;box-shadow:0 8px 30px rgba(124,58,237,0.12);">
-        <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#7C3AED,#6366F1);
-        display:inline-flex;align-items:center;justify-content:center;font-size:1.8rem;margin-bottom:1rem;
-        box-shadow:0 4px 14px rgba(124,58,237,0.3);">👤</div>
-        <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:#1E1B4B;margin-bottom:0.3rem;">Enter Your Name</div>
-        <div style="font-size:0.88rem;color:#6B7280;margin-bottom:1.2rem;">Let's personalize your travel experience</div>
+        st.markdown("""<div class="anim-scale-in" style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;
+        padding:2rem 1.5rem;text-align:center;box-shadow:none;">
+        <div style="font-size:0.95rem;font-weight:600;color:#0F172A;margin-bottom:0.25rem;">Enter Your Name</div>
+        <div style="font-size:0.82rem;color:#64748B;margin-bottom:1rem;">To personalize your travel experience</div>
         </div>""", unsafe_allow_html=True)
 
-        name = st.text_input("Your Name", placeholder="e.g. Vanisha", label_visibility="collapsed")
-        st.markdown("<div style='margin-top:0.3rem;'></div>", unsafe_allow_html=True)
+        name = st.text_input("Your Name", placeholder="e.g. Alex", label_visibility="collapsed")
+        st.markdown("<div style='margin-top:0.2rem;'></div>", unsafe_allow_html=True)
 
-        if st.button("🚀 Start Planning", type="primary", use_container_width=True, key="start_btn"):
+        if st.button("Start Planning", type="primary", use_container_width=True, key="start_btn"):
             if name and name.strip():
                 st.session_state["user_name"] = name.strip()
                 st.rerun()
             else:
                 st.error("Please enter your name to continue.")
 
-    st.markdown("<div style='margin-top:2rem;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top:1.5rem;'></div>", unsafe_allow_html=True)
 
     feat_cols = st.columns(3)
     feats = [
-        ("🤖", "AI-Powered", "Multi-agent system plans your perfect trip"),
-        ("🌍", "Real Data", "Live weather, hotels, and attraction info"),
-        ("📄", "PDF Export", "Download a beautiful travel brochure"),
+        ("Multi-Agent AI", "5 specialized agents plan your trip collaboratively"),
+        ("Live Data", "Real weather, hotels, and attraction information"),
+        ("PDF Export", "Download a formatted travel brochure instantly"),
     ]
-    for i, (ic, title, desc) in enumerate(feats):
+    for i, (title, desc) in enumerate(feats):
         with feat_cols[i]:
-            st.markdown(f"""<div class="anim-fade-up anim-delay-{i+1}" style="background:#fff;border:1.5px solid #EDE9FE;border-radius:16px;
-            padding:1.3rem;text-align:center;box-shadow:0 2px 8px rgba(124,58,237,0.05);">
-            <div style="font-size:1.8rem;margin-bottom:0.4rem;">{ic}</div>
-            <div style="font-weight:700;color:#1E1B4B;font-size:0.95rem;margin-bottom:0.2rem;">{title}</div>
-            <div style="font-size:0.8rem;color:#6B7280;line-height:1.4;">{desc}</div>
+            st.markdown(f"""<div class="anim-fade-up anim-delay-{i+1}" style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;
+            padding:1.2rem;text-align:center;box-shadow:none;">
+            <div style="font-weight:600;color:#0F172A;font-size:0.9rem;margin-bottom:0.2rem;">{title}</div>
+            <div style="font-size:0.78rem;color:#64748B;line-height:1.4;">{desc}</div>
             </div>""", unsafe_allow_html=True)
 
 
@@ -697,137 +664,126 @@ def render_welcome():
 
 def render_landing():
     user_name = st.session_state.get("user_name", "Traveler")
-    st.markdown(f"""<div class="anim-fade-up" style="background:linear-gradient(135deg,#F5F0FF 0%,#EDE9FE 50%,#F5F0FF 100%);
-    border-radius:16px;padding:1.5rem 2rem;margin-bottom:1.5rem;border:1.5px solid #DDD6FE;">
-    <div style="display:flex;align-items:center;gap:1rem;">
-    <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#7C3AED,#6366F1);
-    display:inline-flex;align-items:center;justify-content:center;font-size:1.4rem;
-    box-shadow:0 4px 12px rgba(124,58,237,0.25);color:#fff;">👤</div>
+    st.markdown(f"""<div class="anim-fade-up" style="background:#fff;
+    border-radius:12px;padding:1.2rem 1.5rem;margin-bottom:1.5rem;border:1px solid #E2E8F0;">
+    <div style="display:flex;align-items:center;gap:0.8rem;">
+    <div style="width:36px;height:36px;border-radius:8px;background:#EEF2FF;
+    display:inline-flex;align-items:center;justify-content:center;font-size:0.9rem;
+    color:#4F46E5;font-weight:600;">{esc(user_name[0].upper())}</div>
     <div>
-    <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:#1E1B4B;">👋 Welcome, {esc(user_name)}!</div>
-    <div style="font-size:0.92rem;color:#6B7280;margin-top:0.1rem;">Ready to plan your next adventure?</div>
+    <div style="font-size:1rem;font-weight:600;color:#0F172A;">Welcome, {esc(user_name)}</div>
+    <div style="font-size:0.82rem;color:#64748B;margin-top:0.05rem;">Ready to plan your next trip?</div>
     </div></div></div>""", unsafe_allow_html=True)
 
     # Hero
-    st.markdown("""<div class="anim-fade-up" style="background:linear-gradient(135deg,#7C3AED 0%,#6366F1 40%,#8B5CF6 70%,#A78BFA 100%);
-    background-size:200% 200%;animation:gradientShift 6s ease infinite;
-    border-radius:24px;padding:3.5rem 3rem;color:#fff;position:relative;overflow:hidden;margin-bottom:2rem;
-    box-shadow:0 16px 48px rgba(124,58,237,0.3);">
-    <div style="position:absolute;top:-30%;right:-10%;width:45%;height:160%;
-    background:radial-gradient(circle,rgba(255,255,255,0.08) 0%,transparent 70%);pointer-events:none;"></div>
-    <div style="position:absolute;bottom:-20%;left:-5%;width:30%;height:120%;
-    background:radial-gradient(circle,rgba(255,255,255,0.05) 0%,transparent 70%);pointer-events:none;"></div>
+    st.markdown("""<div class="anim-fade-up" style="background:#0F172A;
+    border-radius:14px;padding:3rem 2.5rem;color:#fff;position:relative;overflow:hidden;margin-bottom:2rem;
+    box-shadow:0 1px 3px rgba(0,0,0,0.1);">
     <div style="position:relative;z-index:1;text-align:center;">
-    <div style="font-family:'Playfair Display',serif;font-size:3.5rem;font-weight:800;letter-spacing:-1.5px;margin-bottom:0.5rem;
-    text-shadow:0 2px 10px rgba(0,0,0,0.1);">
-    ✈️ AI Travel Planner</div>
-    <div style="font-size:1.2rem;color:rgba(255,255,255,0.85);margin-bottom:0.5rem;max-width:620px;margin-left:auto;margin-right:auto;">
-    Your personal AI travel assistant. Plan dream trips with weather forecasts, hotel picks, attractions, budget breakdowns, and more.</div>
-    <div style="font-size:0.9rem;color:rgba(255,255,255,0.6);margin-bottom:1.8rem;">Fill in the sidebar and click <b style="color:rgba(255,255,255,0.9);">Generate Itinerary</b> to start planning.</div>
-    <div style="display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;">
-    <div style="text-align:center;"><div style="font-size:2rem;font-weight:800;">4</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1px;">AI Agents</div></div>
-    <div style="text-align:center;"><div style="font-size:2rem;font-weight:800;">8+</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1px;">Trip Sections</div></div>
-    <div style="text-align:center;"><div style="font-size:2rem;font-weight:800;">Real-time</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1px;">Weather Data</div></div>
-    <div style="text-align:center;"><div style="font-size:2rem;font-weight:800;">PDF</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1px;">Export Ready</div></div>
+    <div style="font-size:1.8rem;font-weight:700;letter-spacing:-0.5px;margin-bottom:0.4rem;">
+    AI Travel Planner</div>
+    <div style="font-size:0.95rem;color:#94A3B8;max-width:520px;margin:0 auto 0.3rem;">
+    Your personal AI travel assistant. Plan trips with weather forecasts, hotel picks, attractions, and budget breakdowns.</div>
+    <div style="font-size:0.82rem;color:#64748B;margin-bottom:1.5rem;">Fill in the sidebar and click <b style="color:#CBD5E1;">Generate Itinerary</b> to start.</div>
+    <div style="display:flex;justify-content:center;gap:2.5rem;flex-wrap:wrap;">
+    <div style="text-align:center;"><div style="font-size:1.5rem;font-weight:700;">5</div><div style="font-size:0.65rem;color:#64748B;text-transform:uppercase;letter-spacing:1px;">AI Agents</div></div>
+    <div style="text-align:center;"><div style="font-size:1.5rem;font-weight:700;">12</div><div style="font-size:0.65rem;color:#64748B;text-transform:uppercase;letter-spacing:1px;">Trip Sections</div></div>
+    <div style="text-align:center;"><div style="font-size:1.5rem;font-weight:700;">Live</div><div style="font-size:0.65rem;color:#64748B;text-transform:uppercase;letter-spacing:1px;">Weather Data</div></div>
+    <div style="text-align:center;"><div style="font-size:1.5rem;font-weight:700;">PDF</div><div style="font-size:0.65rem;color:#64748B;text-transform:uppercase;letter-spacing:1px;">Export</div></div>
     </div>
     </div></div>""", unsafe_allow_html=True)
 
     # Features
-    st.markdown('<div style="font-family:\'Playfair Display\',serif;font-size:1.4rem;font-weight:700;color:#1E1B4B;margin-bottom:0.8rem;text-align:center;">✨ What You Get</div>', unsafe_allow_html=True)
-    st.markdown('<div style="text-align:center;color:#6B7280;font-size:0.9rem;margin-bottom:1.2rem;">Everything you need for the perfect trip, powered by AI</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:0.8rem;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.6rem;text-align:center;">Capabilities</div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align:center;color:#94A3B8;font-size:0.85rem;margin-bottom:1rem;">Everything you need for trip planning</div>', unsafe_allow_html=True)
 
     features = [
-        ("🤖","AI Itinerary","Multi-agent system generates personalized day-by-day plans","linear-gradient(135deg,#7C3AED,#6366F1)"),
-        ("🌤️","Live Weather","Real-time forecasts with packing advice and conditions","linear-gradient(135deg,#0EA5E9,#06B6D4)"),
-        ("🏨","Hotel Picks","Curated picks with ratings, prices, and booking links","linear-gradient(135deg,#6366F1,#8B5CF6)"),
-        ("🎯","Attractions","Top sights with hours, fees, and Google Maps links","linear-gradient(135deg,#EC4899,#F472B6)"),
-        ("💰","Budget","Detailed cost breakdown with money-saving tips","linear-gradient(135deg,#22C55E,#16A34A)"),
-        ("🧳","Packing","Smart packing checklist organized by category","linear-gradient(135deg,#F59E0B,#F97316)"),
+        ("Itinerary","Multi-agent system generates personalized day-by-day plans","#4F46E5"),
+        ("Weather","Real-time forecasts with packing advice and conditions","#0284C7"),
+        ("Hotels","Curated picks with ratings, prices, and booking links","#4F46E5"),
+        ("Attractions","Top sights with hours, fees, and Google Maps links","#DB2777"),
+        ("Budget","Detailed cost breakdown with money-saving tips","#059669"),
+        ("Packing","Smart checklist organized by category","#D97706"),
     ]
 
     cols = st.columns(3)
-    for i, (icon, title, desc, grad) in enumerate(features):
+    for i, (title, desc, color) in enumerate(features):
         with cols[i % 3]:
-            st.markdown(f"""<div class="anim-fade-up anim-delay-{i+1} hl" style="background:#fff;border:1.5px solid #EDE9FE;border-radius:18px;
-            padding:1.5rem;text-align:center;box-shadow:0 2px 10px rgba(124,58,237,0.06);
-            transition:all 0.3s;cursor:default;height:100%;">
-            <div style="width:56px;height:56px;border-radius:16px;background:{grad};display:inline-flex;align-items:center;
-            justify-content:center;font-size:1.6rem;margin-bottom:0.8rem;box-shadow:0 6px 16px rgba(0,0,0,0.12);">{icon}</div>
-            <div style="font-size:1.1rem;font-weight:700;color:#1E1B4B;margin-bottom:0.3rem;">{title}</div>
-            <div style="font-size:0.82rem;color:#6B7280;line-height:1.5;">{desc}</div>
+            st.markdown(f"""<div class="anim-fade-up anim-delay-{i+1} hl" style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;
+            padding:1.3rem;box-shadow:none;transition:all 0.2s;cursor:default;height:100%;">
+            <div style="width:6px;height:28px;border-radius:3px;background:{color};display:inline-block;margin-bottom:0.6rem;"></div>
+            <div style="font-size:0.92rem;font-weight:600;color:#0F172A;margin-bottom:0.2rem;">{title}</div>
+            <div style="font-size:0.78rem;color:#64748B;line-height:1.5;">{desc}</div>
             </div>""", unsafe_allow_html=True)
 
     # How It Works
-    st.markdown("<div style='margin-top:2.5rem;'></div>", unsafe_allow_html=True)
-    st.markdown('<div style="font-family:\'Playfair Display\',serif;font-size:1.4rem;font-weight:700;color:#1E1B4B;margin-bottom:0.5rem;text-align:center;">🔧 How It Works</div>', unsafe_allow_html=True)
-    st.markdown('<div style="text-align:center;color:#6B7280;font-size:0.9rem;margin-bottom:1.2rem;">Three simple steps to your dream trip</div>', unsafe_allow_html=True)
+    st.markdown("<div style='margin-top:2rem;'></div>", unsafe_allow_html=True)
+    st.markdown('<div style="font-size:0.8rem;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.6rem;text-align:center;">Process</div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align:center;color:#94A3B8;font-size:0.85rem;margin-bottom:1rem;">Three steps to your trip</div>', unsafe_allow_html=True)
 
     steps = [
-        ("1️⃣","Tell Us Your Trip","Enter your destination, dates, budget, and interests in the sidebar."),
-        ("2️⃣","AI Agents Plan","4 specialized AI agents research hotels, attractions, weather, and create your itinerary."),
-        ("3️⃣","Explore & Export","Review your personalized plan, save it, or export as a beautiful PDF brochure."),
+        ("1","Configure","Enter your destination, budget, and interests in the sidebar."),
+        ("2","Generate","5 AI agents research and plan your complete itinerary."),
+        ("3","Export","Review, save, or download your trip as a PDF brochure."),
     ]
     scols = st.columns(3)
     for i, (num, title, desc) in enumerate(steps):
         with scols[i]:
-            st.markdown(f"""<div class="anim-fade-up anim-delay-{i+1}" style="background:linear-gradient(135deg,{'#7C3AED' if i==0 else '#6366F1' if i==1 else '#8B5CF6'},{'#6366F1' if i==0 else '#8B5CF6' if i==1 else '#A78BFA'});
-            border-radius:18px;padding:1.6rem 1.2rem;color:#fff;text-align:center;box-shadow:0 6px 20px rgba(124,58,237,0.2);">
-            <div style="font-size:2.2rem;margin-bottom:0.5rem;">{num}</div>
-            <div style="font-size:1.05rem;font-weight:700;margin-bottom:0.3rem;">{title}</div>
-            <div style="font-size:0.82rem;color:rgba(255,255,255,0.85);line-height:1.5;">{desc}</div>
+            st.markdown(f"""<div class="anim-fade-up anim-delay-{i+1}" style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;
+            padding:1.4rem 1.2rem;text-align:center;box-shadow:none;">
+            <div style="width:32px;height:32px;border-radius:8px;background:#EEF2FF;color:#4F46E5;
+            display:inline-flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;margin-bottom:0.6rem;">{num}</div>
+            <div style="font-size:0.95rem;font-weight:600;color:#0F172A;margin-bottom:0.2rem;">{title}</div>
+            <div style="font-size:0.78rem;color:#64748B;line-height:1.5;">{desc}</div>
             </div>""", unsafe_allow_html=True)
 
-    # Sample Itineraries
-    st.markdown("<div style='margin-top:2.5rem;'></div>", unsafe_allow_html=True)
-    st.markdown('<div style="font-family:\'Playfair Display\',serif;font-size:1.4rem;font-weight:700;color:#1E1B4B;margin-bottom:0.5rem;text-align:center;">🌍 Popular Destinations</div>', unsafe_allow_html=True)
-    st.markdown('<div style="text-align:center;color:#6B7280;font-size:0.9rem;margin-bottom:1.2rem;">Get inspired by these trending travel spots</div>', unsafe_allow_html=True)
+    # Popular Destinations
+    st.markdown("<div style='margin-top:2rem;'></div>", unsafe_allow_html=True)
+    st.markdown('<div style="font-size:0.8rem;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.6rem;text-align:center;">Trending</div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align:center;color:#94A3B8;font-size:0.85rem;margin-bottom:1rem;">Popular destinations to explore</div>', unsafe_allow_html=True)
 
     popular = [
-        ("🇫🇷","Paris","City of Lights","$800-$3000","Romance, Art, Cuisine"),
-        ("🇯🇵","Tokyo","Land of the Rising Sun","$1200-$4000","Technology, Culture, Food"),
-        ("🇮🇹","Rome","The Eternal City","$700-$2500","History, Architecture, Wine"),
-        ("🇹🇭","Bangkok","Land of Smiles","$400-$1500","Temples, Street Food, Markets"),
-        ("🇬🇧","London","The Big Smoke","$1000-$3500","Royalty, Museums, Theatre"),
-        ("🇪🇸","Barcelona","Gaudí's Masterpiece","$700-$2800","Beaches, Art, Nightlife"),
+        ("Paris","$800–3K","France"),
+        ("Tokyo","$1.2K–4K","Japan"),
+        ("Rome","$700–2.5K","Italy"),
+        ("Bangkok","$400–1.5K","Thailand"),
+        ("London","$1K–3.5K","UK"),
+        ("Barcelona","$700–2.8K","Spain"),
     ]
 
     pcols = st.columns(6)
-    for i, (flag, name, tag, price, vibes) in enumerate(popular):
+    for i, (name, price, country) in enumerate(popular):
         with pcols[i]:
-            st.markdown(f"""<div class="anim-scale-in anim-delay-{i+1} hl-sm" style="background:#fff;border:1.5px solid #EDE9FE;border-radius:16px;
-            padding:1.1rem 0.8rem;text-align:center;box-shadow:0 2px 8px rgba(124,58,237,0.05);
-            transition:all 0.3s;cursor:default;">
-            <div style="font-size:2.2rem;margin-bottom:0.3rem;">{flag}</div>
-            <div style="font-weight:700;color:#1E1B4B;font-size:0.92rem;">{name}</div>
-            <div style="font-size:0.7rem;color:#9CA3AF;margin:0.15rem 0;">{tag}</div>
-            <div style="font-size:0.7rem;color:#7C3AED;font-weight:600;margin-top:0.2rem;">{price}</div>
-            <div style="font-size:0.62rem;color:#A78BFA;margin-top:0.15rem;">{vibes}</div>
+            st.markdown(f"""<div class="anim-scale-in anim-delay-{i+1} hl-sm" style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;
+            padding:1rem 0.7rem;text-align:center;box-shadow:none;transition:all 0.2s;cursor:default;">
+            <div style="font-weight:600;color:#0F172A;font-size:0.85rem;">{name}</div>
+            <div style="font-size:0.68rem;color:#94A3B8;margin:0.15rem 0;">{country}</div>
+            <div style="font-size:0.7rem;color:#4F46E5;font-weight:500;margin-top:0.15rem;">{price}</div>
             </div>""", unsafe_allow_html=True)
 
     # Testimonials
-    st.markdown("<div style='margin-top:2.5rem;'></div>", unsafe_allow_html=True)
-    st.markdown('<div style="font-family:\'Playfair Display\',serif;font-size:1.4rem;font-weight:700;color:#1E1B4B;margin-bottom:0.5rem;text-align:center;">💬 What Travelers Say</div>', unsafe_allow_html=True)
+    st.markdown("<div style='margin-top:2rem;'></div>", unsafe_allow_html=True)
+    st.markdown('<div style="font-size:0.8rem;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.6rem;text-align:center;">Feedback</div>', unsafe_allow_html=True)
 
     testimonials = [
-        ("\"Planned my entire Japan trip in 2 minutes. The hotel recommendations were spot-on!\"","— Sarah M.","⭐⭐⭐⭐⭐"),
-        ("\"The budget breakdown saved me hundreds. I knew exactly where every dollar went.\"","— James K.","⭐⭐⭐⭐⭐"),
-        ("\"Best travel app I've used. The PDF export is gorgeous and so practical.\"","— Priya R.","⭐⭐⭐⭐⭐"),
+        ("\"Planned my entire Japan trip in 2 minutes. Hotel recommendations were spot-on.\"","— Sarah M."),
+        ("\"The budget breakdown saved me hundreds. I knew exactly where every dollar went.\"","— James K."),
+        ("\"The PDF export is gorgeous and so practical. Best travel tool I've used.\"","— Priya R."),
     ]
     tcols = st.columns(3)
-    for i, (quote, author, stars) in enumerate(testimonials):
+    for i, (quote, author) in enumerate(testimonials):
         with tcols[i]:
-            st.markdown(f"""<div class="anim-fade-up anim-delay-{i+1}" style="background:#fff;border:1.5px solid #EDE9FE;border-radius:16px;
-            padding:1.4rem;box-shadow:0 2px 8px rgba(124,58,237,0.05);">
-            <div style="color:#F59E0B;font-size:0.9rem;margin-bottom:0.5rem;">{stars}</div>
-            <div style="color:#374151;font-size:0.88rem;line-height:1.6;font-style:italic;margin-bottom:0.6rem;">{quote}</div>
-            <div style="color:#7C3AED;font-weight:700;font-size:0.82rem;">{author}</div>
+            st.markdown(f"""<div class="anim-fade-up anim-delay-{i+1}" style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;
+            padding:1.2rem;box-shadow:none;">
+            <div style="color:#334155;font-size:0.82rem;line-height:1.6;font-style:italic;margin-bottom:0.5rem;">{quote}</div>
+            <div style="color:#4F46E5;font-weight:600;font-size:0.78rem;">{author}</div>
             </div>""", unsafe_allow_html=True)
 
     # Saved Trips
     saved = load_saved_trips()
     if saved:
-        st.markdown("<div style='margin-top:2rem;'></div>", unsafe_allow_html=True)
-        st.markdown(f'<div style="font-family:\'Playfair Display\',serif;font-size:1.4rem;font-weight:700;color:#1E1B4B;margin-bottom:0.8rem;">📁 My Recent Trips ({len(saved)})</div>', unsafe_allow_html=True)
+        st.markdown("<div style='margin-top:1.5rem;'></div>", unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:0.8rem;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.6rem;">Recent Trips ({len(saved)})</div>', unsafe_allow_html=True)
         scols = st.columns(min(len(saved), 4))
         for i, trip in enumerate(saved[:4]):
             with scols[i]:
@@ -836,10 +792,10 @@ def render_landing():
                 created = trip.get("created_at","")[:10]
                 flag = dest_flag(dest)
                 trip_id = trip.get("id","")
-                st.markdown(f"""<div class="hl-subtle" style="background:#fff;border:1.5px solid #EDE9FE;border-radius:14px;
-                padding:1rem;box-shadow:0 1px 4px rgba(124,58,237,0.05);transition:all 0.2s;">
-                <div style="font-weight:700;color:#1E1B4B;font-size:0.88rem;">{flag} {esc(dest)}</div>
-                <div style="font-size:0.72rem;color:#9CA3AF;margin-top:0.2rem;">{days} days · {created}</div>
+                st.markdown(f"""<div class="hl-subtle" style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;
+                padding:0.9rem;box-shadow:none;transition:all 0.2s;">
+                <div style="font-weight:600;color:#0F172A;font-size:0.85rem;">{flag} {esc(dest)}</div>
+                <div style="font-size:0.7rem;color:#94A3B8;margin-top:0.15rem;">{days} days · {created}</div>
                 </div>""", unsafe_allow_html=True)
                 bc1, bc2 = st.columns(2)
                 with bc1:
@@ -858,16 +814,16 @@ def render_sidebar():
     with st.sidebar:
         user_name = st.session_state.get("user_name", "")
         st.markdown("""<div style="text-align:center;padding:0.3rem 0 1.2rem 0;">
-<div style="width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,#7C3AED,#6366F1);
+<div style="width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,#4F46E5,#4F46E5);
 display:inline-flex;align-items:center;justify-content:center;font-size:1.4rem;box-shadow:0 4px 14px rgba(124,58,237,0.3);">✈️</div>
-<div style="font-size:1.15rem;font-weight:800;color:#1E1B4B;margin-top:0.5rem;">AI Travel Planner</div>
+<div style="font-size:1.15rem;font-weight:800;color:#0F172A;margin-top:0.5rem;">AI Travel Planner</div>
 </div>""", unsafe_allow_html=True)
 
         if user_name:
-            st.markdown(f'<div style="text-align:center;background:linear-gradient(135deg,#F5F0FF,#EDE9FE);border:1.5px solid #DDD6FE;border-radius:12px;padding:0.6rem;margin-bottom:1rem;font-weight:600;color:#7C3AED;font-size:0.9rem;">👋 Welcome, {esc(user_name)}!</div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="text-align:center;background:linear-gradient(135deg,#F8FAFC,#F1F5F9);border:1.5px solid #E2E8F0;border-radius:12px;padding:0.6rem;margin-bottom:1rem;font-weight:600;color:#4F46E5;font-size:0.9rem;">👋 Welcome, {esc(user_name)}!</div>', unsafe_allow_html=True)
 
-        st.markdown('<div style="background:#fff;border:1.5px solid #EDE9FE;border-radius:14px;padding:1.1rem;margin-bottom:0.7rem;">', unsafe_allow_html=True)
-        st.markdown('<div style="font-weight:700;color:#1E1B4B;margin-bottom:0.5rem;">📍 Trip Details</div>', unsafe_allow_html=True)
+        st.markdown('<div style="background:#fff;border:1.5px solid #F1F5F9;border-radius:14px;padding:1.1rem;margin-bottom:0.7rem;">', unsafe_allow_html=True)
+        st.markdown('<div style="font-weight:700;color:#0F172A;margin-bottom:0.5rem;">📍 Trip Details</div>', unsafe_allow_html=True)
         source_city = st.text_input("From", placeholder="e.g. New York")
         destination = st.text_input("To", placeholder="e.g. Paris, France")
         c1,c2 = st.columns(2)
@@ -876,13 +832,13 @@ display:inline-flex;align-items:center;justify-content:center;font-size:1.4rem;b
         budget = st.number_input("Budget (USD)",100,100000,3000,100)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown('<div style="background:#fff;border:1.5px solid #EDE9FE;border-radius:14px;padding:1.1rem;margin-bottom:0.7rem;">', unsafe_allow_html=True)
-        st.markdown('<div style="font-weight:700;color:#1E1B4B;margin-bottom:0.5rem;">🎯 Interests</div>', unsafe_allow_html=True)
+        st.markdown('<div style="background:#fff;border:1.5px solid #F1F5F9;border-radius:14px;padding:1.1rem;margin-bottom:0.7rem;">', unsafe_allow_html=True)
+        st.markdown('<div style="font-weight:700;color:#0F172A;margin-bottom:0.5rem;">🎯 Interests</div>', unsafe_allow_html=True)
         interests = st.multiselect("Interests",["nature","adventure","food","history","shopping","beach"],default=["food","history"],label_visibility="collapsed")
         st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown('<div style="background:#fff;border:1.5px solid #EDE9FE;border-radius:14px;padding:1.1rem;margin-bottom:1rem;">', unsafe_allow_html=True)
-        st.markdown('<div style="font-weight:700;color:#1E1B4B;margin-bottom:0.5rem;">🏨 Hotel Preference</div>', unsafe_allow_html=True)
+        st.markdown('<div style="background:#fff;border:1.5px solid #F1F5F9;border-radius:14px;padding:1.1rem;margin-bottom:1rem;">', unsafe_allow_html=True)
+        st.markdown('<div style="font-weight:700;color:#0F172A;margin-bottom:0.5rem;">🏨 Hotel Preference</div>', unsafe_allow_html=True)
         hotel_pref = st.radio("Tier",["budget","standard","luxury"],index=1,horizontal=True,label_visibility="collapsed")
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -898,7 +854,7 @@ display:inline-flex;align-items:center;justify-content:center;font-size:1.4rem;b
                     days = trip.get("request",{}).get("num_days","?")
                     created = trip.get("created_at","")[:10]
                     trip_id = trip.get("id","")
-                    st.markdown(f'<div style="font-size:0.82rem;font-weight:600;color:#1E1B4B;">📍 {esc(dest)} · {days}d · {created}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div style="font-size:0.82rem;font-weight:600;color:#0F172A;">📍 {esc(dest)} · {days}d · {created}</div>', unsafe_allow_html=True)
                     bc1,bc2,bc3 = st.columns(3)
                     with bc1:
                         if st.button("👁️",key=f"v_{trip_id}",help="View trip"):
@@ -993,14 +949,12 @@ def render_hero(itin, req):
         {rows}
         </div>'''
 
-    st.markdown(f"""<div class="anim-fade-up" style="background:linear-gradient(135deg,#7C3AED 0%,#6366F1 40%,#8B5CF6 70%,#A78BFA 100%);
-    border-radius:22px;padding:2.2rem 2.5rem;color:#fff;position:relative;overflow:hidden;margin-bottom:1.2rem;
-    box-shadow:0 10px 36px rgba(124,58,237,0.28);">
-    <div style="position:absolute;top:-40%;right:-15%;width:50%;height:180%;
-    background:radial-gradient(circle,rgba(255,255,255,0.07) 0%,transparent 70%);pointer-events:none;"></div>
+    st.markdown(f"""<div class="anim-fade-up" style="background:#0F172A;
+    border-radius:14px;padding:1.8rem 2rem;color:#fff;position:relative;overflow:hidden;margin-bottom:1.2rem;
+    box-shadow:0 1px 3px rgba(0,0,0,0.1);">
     <div class="hero-flex" style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
     <div class="hero-info" style="flex:1;min-width:300px;">
-    <div style="font-family:'Playfair Display',serif;font-size:2.6rem;font-weight:800;letter-spacing:-1px;">{flag} {esc(dest)}</div>
+    <div style="font-size:2.2rem;font-weight:700;letter-spacing:-0.5px;">{flag} {esc(dest)}</div>
     <div style="font-size:1rem;color:rgba(255,255,255,0.82);margin:0.3rem 0 1rem 0;">{esc(src)} → {esc(dest)} · {days} days · {travelers} traveler{"s" if travelers!=1 else ""}</div>
     <div style="display:flex;flex-wrap:wrap;gap:0.45rem;">{badges}</div>
     </div>
@@ -1030,21 +984,23 @@ def render_metrics(itin, req):
     cols=st.columns(6)
     for col,(ic,val,lbl) in zip(cols,items):
         with col:
-            st.markdown(f"""<div class="anim-scale-in hl-xs" style="background:#fff;border:1.5px solid #EDE9FE;border-radius:14px;
+            st.markdown(f"""<div class="anim-scale-in hl-xs" style="background:#fff;border:1.5px solid #F1F5F9;border-radius:14px;
             padding:0.9rem 0.5rem;text-align:center;box-shadow:0 1px 4px rgba(124,58,237,0.05);
             transition:all 0.3s;">
             <div style="font-size:1.3rem;">{ic}</div>
-            <div style="font-size:1.15rem;font-weight:700;color:#1E1B4B;">{val}</div>
-            <div style="font-size:0.65rem;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.8px;margin-top:0.1rem;">{lbl}</div>
+            <div style="font-size:1.15rem;font-weight:700;color:#0F172A;">{val}</div>
+            <div style="font-size:0.65rem;color:#94A3B8;text-transform:uppercase;letter-spacing:0.8px;margin-top:0.1rem;">{lbl}</div>
             </div>""", unsafe_allow_html=True)
 
 
 # ─── SECTION HEADER HELPER ────────────────────────────────────────────────────
 
-def section_header(title, emoji="", color="#7C3AED", bg="#F5F0FF", border="#DDD6FE"):
-    st.markdown(f"""<div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:{color};
-    margin:0.5rem 0 0.8rem 0;padding-bottom:0.4rem;border-bottom:2px solid {border};">
-    {emoji} {title}</div>""", unsafe_allow_html=True)
+def section_header(title, emoji="", color="#4F46E5", bg="#EEF2FF", border="#E2E8F0"):
+    st.markdown(f"""<div style="font-size:0.95rem;font-weight:600;color:#0F172A;
+    margin:0.5rem 0 0.8rem 0;padding-bottom:0.4rem;border-bottom:1px solid #E2E8F0;
+    display:flex;align-items:center;gap:0.5rem;">
+    <span style="width:4px;height:18px;border-radius:2px;background:{color};display:inline-block;"></span>
+    {title}</div>""", unsafe_allow_html=True)
 
 
 # ─── WEATHER SECTION ──────────────────────────────────────────────────────────
@@ -1079,7 +1035,7 @@ def render_weather(w):
     <div style="position:relative;z-index:1;display:flex;align-items:center;gap:2rem;flex-wrap:wrap;">
     <div class="wx-icon-anim" style="font-size:5rem;line-height:1;text-shadow:0 4px 20px rgba(0,0,0,0.15);">{icon}</div>
     <div style="flex:1;min-width:200px;">
-    <div style="font-family:'Playfair Display',serif;font-size:4.5rem;font-weight:800;line-height:1;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,0.1);">
+    <div style="font-size:3.5rem;font-weight:700;line-height:1;color:#fff;">
     {temp}°C</div>
     <div style="margin-top:0.5rem;display:flex;flex-wrap:wrap;gap:0.4rem;">
     <span class="wx-badge">{icon} {esc(cond)}</span>
@@ -1164,7 +1120,7 @@ def _dynamic_weather_tips(temp, feels, rain, wind, hum, cond):
 
 def render_hotels(hotels, dest=""):
     if not hotels: return
-    section_header(f"Recommended Hotels ({len(hotels)})","🏨",color="#6366F1",bg="#E0E7FF",border="#C7D2FE")
+    section_header(f"Recommended Hotels ({len(hotels)})")
 
     for h in hotels:
         name=h.get("name","Hotel"); rating=h.get("rating",0); price=h.get("price_per_night",0)
@@ -1174,16 +1130,16 @@ def render_hotels(hotels, dest=""):
         wurl=safe_url(h.get("website_url",""))
         burl=f"https://www.booking.com/searchresults.html?ss={urllib.parse.quote_plus(name)}"
         stars="⭐"*int(rating) if rating else ""
-        tier_color = "#22C55E" if price < 150 else "#F59E0B" if price < 300 else "#7C3AED"
+        tier_color = "#22C55E" if price < 150 else "#F59E0B" if price < 300 else "#4F46E5"
         tier_label = "💰 Budget" if price < 150 else "💎 Mid-Range" if price < 300 else "👑 Luxury"
 
         am_html=''.join(f'<span style="display:inline-block;background:#EFF6FF;color:#2563EB;padding:0.2rem 0.55rem;border-radius:50px;font-size:0.72rem;font-weight:500;margin:0.1rem;">{sanitize_text(a)}</span>' for a in amenities[:6])
         pros_html=''.join(f'<div style="color:#16A34A;font-size:0.85rem;font-weight:500;">✓ {sanitize_text(p)}</div>' for p in pros[:3])
         cons_html=''.join(f'<div style="color:#DC2626;font-size:0.85rem;font-weight:500;">✗ {sanitize_text(c)}</div>' for c in cons[:2])
-        links=f'<a href="{murl}" target="_blank" style="display:inline-block;padding:0.38rem 0.75rem;border-radius:8px;font-size:0.78rem;font-weight:600;color:#7C3AED;background:#F5F0FF;border:1.5px solid #DDD6FE;text-decoration:none;transition:all 0.2s;margin:0.15rem 0.22rem 0.15rem 0;" class="lk">🗺️ Google Maps</a><a href="{burl}" target="_blank" style="display:inline-block;padding:0.38rem 0.75rem;border-radius:8px;font-size:0.78rem;font-weight:600;color:#fff;background:linear-gradient(135deg,#7C3AED,#6366F1);text-decoration:none;transition:all 0.2s;margin:0.15rem 0.22rem 0.15rem 0;" class="lk-f">📋 Book Now</a>'
-        if wurl: links+=f'<a href="{wurl}" target="_blank" style="display:inline-block;padding:0.38rem 0.75rem;border-radius:8px;font-size:0.78rem;font-weight:600;color:#7C3AED;background:#F5F0FF;border:1.5px solid #DDD6FE;text-decoration:none;margin:0.15rem 0.22rem 0.15rem 0;">🌐 Website</a>'
+        links=f'<a href="{murl}" target="_blank" style="display:inline-block;padding:0.38rem 0.75rem;border-radius:8px;font-size:0.78rem;font-weight:600;color:#4F46E5;background:#F8FAFC;border:1.5px solid #E2E8F0;text-decoration:none;transition:all 0.2s;margin:0.15rem 0.22rem 0.15rem 0;" class="lk">🗺️ Google Maps</a><a href="{burl}" target="_blank" style="display:inline-block;padding:0.38rem 0.75rem;border-radius:8px;font-size:0.78rem;font-weight:600;color:#fff;background:linear-gradient(135deg,#4F46E5,#4F46E5);text-decoration:none;transition:all 0.2s;margin:0.15rem 0.22rem 0.15rem 0;" class="lk-f">📋 Book Now</a>'
+        if wurl: links+=f'<a href="{wurl}" target="_blank" style="display:inline-block;padding:0.38rem 0.75rem;border-radius:8px;font-size:0.78rem;font-weight:600;color:#4F46E5;background:#F8FAFC;border:1.5px solid #E2E8F0;text-decoration:none;margin:0.15rem 0.22rem 0.15rem 0;">🌐 Website</a>'
 
-        st.markdown(f"""<div class="anim-fade-up hl" style="background:#fff;border:1.5px solid #E5DEFF;border-left:4px solid #6366F1;border-radius:16px;
+        st.markdown(f"""<div class="anim-fade-up hl" style="background:#fff;border:1.5px solid #E2E8F0;border-left:4px solid #4F46E5;border-radius:16px;
         padding:1.3rem;margin-bottom:0.7rem;box-shadow:0 2px 8px rgba(124,58,237,0.05);
         transition:all 0.3s;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.6rem;">
@@ -1192,15 +1148,15 @@ def render_hotels(hotels, dest=""):
         <span style="background:{tier_color};color:#fff;padding:0.15rem 0.5rem;border-radius:50px;font-size:0.68rem;font-weight:600;">{tier_label}</span>
         <span style="color:#F59E0B;font-size:0.85rem;">{stars} {rating}/5</span>
         </div>
-        <div style="font-size:1.15rem;font-weight:700;color:#1E1B4B;">{sanitize_text(name)}</div>
+        <div style="font-size:1.15rem;font-weight:700;color:#0F172A;">{sanitize_text(name)}</div>
         <div style="display:flex;align-items:center;gap:0.5rem;margin:0.2rem 0;">
-        <span style="color:#6B7280;font-size:0.8rem;">📍 {sanitize_text(loc)}</span>
-        {'<span style="color:#9CA3AF;font-size:0.8rem;">· '+sanitize_text(dist)+'</span>' if dist else ''}
+        <span style="color:#64748B;font-size:0.8rem;">📍 {sanitize_text(loc)}</span>
+        {'<span style="color:#94A3B8;font-size:0.8rem;">· '+sanitize_text(dist)+'</span>' if dist else ''}
         </div></div>
-        <div style="text-align:right;"><div style="font-size:1.4rem;font-weight:700;color:#7C3AED;">${price:,.0f}<span style="font-size:0.8rem;color:#9CA3AF;font-weight:400;">/night</span></div></div>
+        <div style="text-align:right;"><div style="font-size:1.4rem;font-weight:700;color:#4F46E5;">${price:,.0f}<span style="font-size:0.8rem;color:#94A3B8;font-weight:400;">/night</span></div></div>
         </div>
         {'<div style="margin:0.5rem 0;">'+am_html+'</div>' if am_html else ''}
-        <p style="color:#374151;font-size:0.9rem;margin:0.4rem 0;line-height:1.5;">{sanitize_text(reason)}</p>
+        <p style="color:#334155;font-size:0.9rem;margin:0.4rem 0;line-height:1.5;">{sanitize_text(reason)}</p>
         {'<div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin:0.4rem 0;"><div>'+pros_html+'</div><div>'+cons_html+'</div></div>' if pros_html or cons_html else ''}
         <div class="link-btns" style="margin-top:0.6rem;">{links}</div>
         </div>""", unsafe_allow_html=True)
@@ -1210,7 +1166,7 @@ def render_hotels(hotels, dest=""):
 
 def render_attractions(attrs, dest=""):
     if not attrs: return
-    section_header(f"Top Attractions ({len(attrs)})","🎯",color="#BE185D",bg="#FDF2F8",border="#FBCFE8")
+    section_header(f"Top Attractions ({len(attrs)})", color="#DB2777")
 
     for a in attrs:
         name=a.get("name",""); desc=a.get("description",""); cat=a.get("category","")
@@ -1218,8 +1174,8 @@ def render_attractions(attrs, dest=""):
         treq=a.get("time_required",""); best=a.get("best_time","")
         murl=safe_url(a.get("maps_url","")) or maps_url(name, dest); wurl=safe_url(a.get("website_url",""))
 
-        cat_colors = {"museum":"#6366F1","temple":"#F59E0B","park":"#22C55E","monument":"#EC4899","beach":"#0EA5E9","market":"#F97316"}
-        cat_color = cat_colors.get(cat.lower(),"#6366F1") if cat else "#6366F1"
+        cat_colors = {"museum":"#4F46E5","temple":"#F59E0B","park":"#22C55E","monument":"#DB2777","beach":"#0EA5E9","market":"#F97316"}
+        cat_color = cat_colors.get(cat.lower(),"#4F46E5") if cat else "#4F46E5"
         cat_html=f'<span style="background:{cat_color}22;color:{cat_color};padding:0.18rem 0.55rem;border-radius:50px;font-size:0.7rem;font-weight:600;">{sanitize_text(cat)}</span>' if cat else ""
 
         details=[]
@@ -1228,19 +1184,19 @@ def render_attractions(attrs, dest=""):
         if treq: details.append(f'⏱️ {sanitize_text(treq)}')
         if best: details.append(f'📅 {sanitize_text(best)}')
 
-        links=f'<a href="{murl}" target="_blank" style="display:inline-block;padding:0.3rem 0.65rem;border-radius:8px;font-size:0.75rem;font-weight:600;color:#EC4899;background:#FDF2F8;border:1.5px solid #FBCFE8;text-decoration:none;margin:0.15rem 0.22rem 0.15rem 0;">🗺️ Maps</a>'
-        if wurl: links+=f'<a href="{wurl}" target="_blank" style="display:inline-block;padding:0.3rem 0.65rem;border-radius:8px;font-size:0.75rem;font-weight:600;color:#EC4899;background:#FDF2F8;border:1.5px solid #FBCFE8;text-decoration:none;margin:0.15rem 0.22rem 0.15rem 0;">🌐 Website</a>'
+        links=f'<a href="{murl}" target="_blank" style="display:inline-block;padding:0.3rem 0.65rem;border-radius:8px;font-size:0.75rem;font-weight:600;color:#DB2777;background:#FDF2F8;border:1.5px solid #FCE7F3;text-decoration:none;margin:0.15rem 0.22rem 0.15rem 0;">🗺️ Maps</a>'
+        if wurl: links+=f'<a href="{wurl}" target="_blank" style="display:inline-block;padding:0.3rem 0.65rem;border-radius:8px;font-size:0.75rem;font-weight:600;color:#DB2777;background:#FDF2F8;border:1.5px solid #FCE7F3;text-decoration:none;margin:0.15rem 0.22rem 0.15rem 0;">🌐 Website</a>'
 
-        st.markdown(f"""<div class="anim-fade-up hl-pk" style="background:#fff;border:1.5px solid #FBCFE8;border-left:4px solid #EC4899;border-radius:14px;
+        st.markdown(f"""<div class="anim-fade-up hl-pk" style="background:#fff;border:1.5px solid #FCE7F3;border-left:4px solid #DB2777;border-radius:14px;
         padding:1.1rem;margin-bottom:0.6rem;box-shadow:0 1px 3px rgba(236,72,153,0.06);
         transition:all 0.3s;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
-        <div style="font-size:1.05rem;font-weight:700;color:#1E1B4B;">{sanitize_text(name)}</div>
+        <div style="font-size:1.05rem;font-weight:700;color:#0F172A;">{sanitize_text(name)}</div>
         <div style="margin:0.25rem 0;">{cat_html} <span style="color:#F59E0B;font-size:0.8rem;margin-left:0.3rem;">⭐ {rating}</span></div>
         </div></div>
-        <p style="color:#374151;font-size:0.88rem;margin:0.3rem 0;line-height:1.5;">{sanitize_text(desc)}</p>
-        {'<div style="color:#6B7280;font-size:0.8rem;">'+' · '.join(details)+'</div>' if details else ''}
+        <p style="color:#334155;font-size:0.88rem;margin:0.3rem 0;line-height:1.5;">{sanitize_text(desc)}</p>
+        {'<div style="color:#64748B;font-size:0.8rem;">'+' · '.join(details)+'</div>' if details else ''}
         <div class="link-btns" style="margin-top:0.4rem;">{links}</div>
         </div>""", unsafe_allow_html=True)
 
@@ -1249,7 +1205,7 @@ def render_attractions(attrs, dest=""):
 
 def render_daily_plans(plans):
     if not plans: return
-    section_header(f"Day-by-Day Itinerary ({len(plans)} days)","📅",color="#059669",bg="#ECFDF5",border="#A7F3D0")
+    section_header(f"Day-by-Day Itinerary ({len(plans)} days)", color="#059669")
 
     for dp in plans:
         dn=dp.get("day_number",0); title=dp.get("title",f"Day {dn}")
@@ -1259,15 +1215,15 @@ def render_daily_plans(plans):
         if highlights:
             hl='<div style="margin-bottom:0.6rem;">'+''.join('<span style="display:inline-block;background:#DCFCE7;color:#166534;padding:0.18rem 0.55rem;border-radius:50px;font-size:0.72rem;font-weight:500;margin:0.08rem;">'+esc(h)+'</span>' for h in highlights[:5])+'</div>'
 
-        with st.expander(f"🗓️ Day {dn}: {esc(title)} — Est. ${cost:,.0f}", expanded=False):
+        with st.expander(f"Day {dn}: {esc(title)} — Est. ${cost:,.0f}", expanded=False):
             st.markdown(hl, unsafe_allow_html=True)
-            for lbl,content,bdr in [("🌅 Morning",dp.get("morning",""),"#7C3AED"),("☀️ Afternoon",dp.get("afternoon",""),"#F59E0B"),
-                ("🌆 Evening",dp.get("evening",""),"#6366F1"),("🌙 Night",dp.get("night",""),"#8B5CF6")]:
+            for lbl,content,bdr in [("Morning",dp.get("morning",""),"#4F46E5"),("Afternoon",dp.get("afternoon",""),"#D97706"),
+                ("Evening",dp.get("evening",""),"#4338CA"),("Night",dp.get("night",""),"#6366F1")]:
                 if content:
                     st.markdown(f"""<div style="padding:0.6rem 0.9rem;border-left:3px solid {bdr};
                     background:#F8F5FF;border-radius:0 10px 10px 0;margin-bottom:0.4rem;">
                     <div style="font-weight:700;color:{bdr};font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;">{lbl}</div>
-                    <div style="color:#374151;font-size:0.9rem;line-height:1.5;margin-top:0.15rem;">{esc(content)}</div></div>""", unsafe_allow_html=True)
+                    <div style="color:#334155;font-size:0.9rem;line-height:1.5;margin-top:0.15rem;">{esc(content)}</div></div>""", unsafe_allow_html=True)
             meals=[]
             if dp.get("lunch"): meals.append(f'🍽️ **Lunch:** {esc(dp["lunch"])}')
             if dp.get("dinner"): meals.append(f'🍷 **Dinner:** {esc(dp["dinner"])}')
@@ -1278,12 +1234,12 @@ def render_daily_plans(plans):
 
 def render_budget(budget, req):
     if not budget: return
-    section_header("Budget Dashboard","💰",color="#15803D",bg="#F0FDF4",border="#BBF7D0")
+    section_header("Budget Dashboard", color="#059669")
 
     cats=["Hotel","Food","Transport","Activities","Misc"]
     vals=[budget.get("hotel",0),budget.get("food",0),budget.get("transport",0),
           budget.get("activities",0),budget.get("miscellaneous",0)]
-    colors=["#7C3AED","#22C55E","#F59E0B","#6366F1","#A78BFA"]
+    colors=["#4F46E5","#22C55E","#F59E0B","#4F46E5","#94A3B8"]
     icons=["🏨","🍽️","🚗","🎯","📦"]
     total=budget.get("total",0); user_b=req.get("budget",total)
     remaining=budget.get("remaining",user_b-total); pp=budget.get("per_person",0)
@@ -1294,7 +1250,7 @@ def render_budget(budget, req):
         fig=go.Figure(data=[go.Pie(labels=cats,values=vals,hole=0.58,marker=dict(colors=colors),
             textinfo="label+percent",textfont=dict(size=11))])
         fig.update_layout(showlegend=False,margin=dict(t=15,b=15,l=15,r=15),
-            paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",font=dict(color="#1E1B4B"),height=280)
+            paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",font=dict(color="#0F172A"),height=280)
         st.plotly_chart(fig,use_container_width=True)
     with c2:
         status_bg = "linear-gradient(135deg,#22C55E,#16A34A)" if within else "linear-gradient(135deg,#EF4444,#DC2626)"
@@ -1327,7 +1283,7 @@ def render_budget(budget, req):
 
 def render_food(rests, dest=""):
     if not rests: return
-    section_header(f"Food & Restaurants ({len(rests)})","🍽️",color="#C2410C",bg="#FFF7ED",border="#FED7AA")
+    section_header(f"Food & Restaurants ({len(rests)})", color="#D97706")
 
     for r in rests:
         name=r.get("name",""); cuisine=r.get("cuisine",""); rating=r.get("rating",0)
@@ -1340,14 +1296,14 @@ def render_food(rests, dest=""):
         st.markdown(f"""<div class="anim-fade-up hl-or" style="background:#fff;border:1.5px solid #FED7AA;border-left:4px solid #F97316;border-radius:14px;
         padding:1.1rem;margin-bottom:0.6rem;box-shadow:0 1px 3px rgba(249,115,22,0.06);
         transition:all 0.3s;">
-        <div style="font-weight:700;color:#1E1B4B;font-size:1rem;">{sanitize_text(name)}</div>
+        <div style="font-weight:700;color:#0F172A;font-size:1rem;">{sanitize_text(name)}</div>
         <div style="margin:0.25rem 0;">
         {'<span style="background:#FFEDD5;color:#9A3412;padding:0.18rem 0.55rem;border-radius:50px;font-size:0.7rem;font-weight:600;">'+sanitize_text(cuisine)+'</span> ' if cuisine else ''}
         <span style="color:#F59E0B;font-size:0.8rem;">⭐ {rating}</span>
         {' <span style="background:#DCFCE7;color:#166534;padding:0.18rem 0.55rem;border-radius:50px;font-size:0.7rem;font-weight:600;margin-left:0.3rem;">'+sanitize_text(pr)+'</span>' if pr else ''}
         </div>
-        {'<p style="color:#374151;font-size:0.85rem;margin:0.3rem 0;line-height:1.5;">'+sanitize_text(desc)+'</p>' if desc else ''}
-        {'<div style="color:#6B7280;font-size:0.78rem;">🕐 '+sanitize_text(hours)+'</div>' if hours else ''}
+        {'<p style="color:#334155;font-size:0.85rem;margin:0.3rem 0;line-height:1.5;">'+sanitize_text(desc)+'</p>' if desc else ''}
+        {'<div style="color:#64748B;font-size:0.78rem;">🕐 '+sanitize_text(hours)+'</div>' if hours else ''}
         <div class="link-btns" style="margin-top:0.4rem;">{links}</div>
         </div>""", unsafe_allow_html=True)
 
@@ -1356,7 +1312,7 @@ def render_food(rests, dest=""):
 
 def render_transport(transport):
     if not transport: return
-    section_header("Getting Around","🚗",color="#6D28D9",bg="#F5F3FF",border="#DDD6FE")
+    section_header("Getting Around", color="#4338CA")
 
     mi={"metro":"🚇","subway":"🚇","bus":"🚌","taxi":"🚕","uber":"📱","lyft":"📱",
         "walking":"🚶","rental":"🚗","tram":"🚊","train":"🚆","ferry":"⛴️","bicycle":"🚲"}
@@ -1367,18 +1323,18 @@ def render_transport(transport):
 
         c1,c2=st.columns([1,4])
         with c1:
-            st.markdown(f"""<div class="anim-scale-in" style="text-align:center;background:#EDE9FE;border-radius:16px;padding:1rem;">
+            st.markdown(f"""<div class="anim-scale-in" style="text-align:center;background:#F1F5F9;border-radius:16px;padding:1rem;">
             <div style="font-size:1.8rem;">{icon}</div>
-            <div style="font-weight:700;color:#1E1B4B;text-transform:capitalize;font-size:0.85rem;margin-top:0.2rem;">{esc(mode)}</div></div>""", unsafe_allow_html=True)
+            <div style="font-weight:700;color:#0F172A;text-transform:capitalize;font-size:0.85rem;margin-top:0.2rem;">{esc(mode)}</div></div>""", unsafe_allow_html=True)
         with c2:
-            st.markdown(f"""<div style="background:#fff;border:1.5px solid #E5DEFF;border-left:4px solid #8B5CF6;border-radius:14px;
+            st.markdown(f"""<div style="background:#fff;border:1.5px solid #E2E8F0;border-left:4px solid #6366F1;border-radius:14px;
             padding:1rem;height:100%;box-shadow:0 1px 3px rgba(124,58,237,0.04);">
-            <p style="color:#374151;margin:0;line-height:1.5;font-size:0.9rem;">{esc(desc)}</p>
-            <div style="display:flex;gap:0.7rem;margin-top:0.4rem;flex-wrap:wrap;color:#6B7280;font-size:0.8rem;">
+            <p style="color:#334155;margin:0;line-height:1.5;font-size:0.9rem;">{esc(desc)}</p>
+            <div style="display:flex;gap:0.7rem;margin-top:0.4rem;flex-wrap:wrap;color:#64748B;font-size:0.8rem;">
             {'<span>⏱️ '+esc(t_est)+'</span>' if t_est else ''}
             {'<span>💵 '+esc(c_est)+'</span>' if c_est else ''}
             </div>
-            {'<div style="color:#7C3AED;font-size:0.8rem;margin-top:0.3rem;font-weight:500;">💡 '+esc(tips)+'</div>' if tips else ''}
+            {'<div style="color:#4F46E5;font-size:0.8rem;margin-top:0.3rem;font-weight:500;">💡 '+esc(tips)+'</div>' if tips else ''}
             </div>""", unsafe_allow_html=True)
         st.markdown("")
 
@@ -1387,7 +1343,7 @@ def render_transport(transport):
 
 def render_packing(packing):
     if not packing: return
-    section_header("Packing Checklist","🧳",color="#B45309",bg="#FFFBEB",border="#FDE68A")
+    section_header("Packing Checklist", color="#D97706")
 
     gi={"documents":"📄","electronics":"📱","medicines":"💊","clothes":"👕","essentials":"🎒"}
     cols=st.columns(2)
@@ -1395,7 +1351,7 @@ def render_packing(packing):
         if items:
             with cols[i%2]:
                 icon=gi.get(grp.lower(),"📦")
-                cbs=''.join(f'<div style="padding:0.3rem 0;border-bottom:1px solid #F3F4F6;color:#374151;font-size:0.88rem;">☐ {esc(item)}</div>' for item in items)
+                cbs=''.join(f'<div style="padding:0.3rem 0;border-bottom:1px solid #F3F4F6;color:#334155;font-size:0.88rem;">☐ {esc(item)}</div>' for item in items)
                 st.markdown(f"""<div class="anim-scale-in anim-delay-{i+1}" style="background:#FFFBEB;border:1.5px solid #FDE68A;border-left:4px solid #F59E0B;border-radius:14px;
                 padding:1rem;margin-bottom:0.6rem;box-shadow:0 2px 6px rgba(245,158,11,0.06);">
                 <div style="font-weight:700;color:#92400E;margin-bottom:0.4rem;font-size:0.95rem;">{icon} {grp.title()}</div>{cbs}</div>""", unsafe_allow_html=True)
@@ -1405,21 +1361,21 @@ def render_packing(packing):
 
 def render_insights(insights):
     if not insights: return
-    section_header("AI Travel Insights","🧠",color="#7C3AED",bg="#F5F0FF",border="#DDD6FE")
+    section_header("AI Travel Insights", color="#4F46E5")
 
     secs=[
-        ("hidden_gems","💎 Hidden Gems","#7C3AED"),("tourist_traps","⚠️ Tourist Traps","#EF4444"),
-        ("local_food","🍜 Must-Try Local Food","#F59E0B"),("safety_tips","🛡️ Safety Tips","#22C55E"),
-        ("money_tips","💵 Money-Saving Tips","#6366F1"),("scam_alerts","🚨 Scam Alerts","#DC2626"),
-        ("photography_spots","📸 Best Photo Spots","#8B5CF6"),("sunrise_spots","🌅 Best Sunrise/Sunset","#F97316"),
+        ("hidden_gems","Hidden Gems","#4F46E5"),("tourist_traps","Tourist Traps","#DC2626"),
+        ("local_food","Must-Try Local Food","#D97706"),("safety_tips","Safety Tips","#059669"),
+        ("money_tips","Money-Saving Tips","#4338CA"),("scam_alerts","Scam Alerts","#DC2626"),
+        ("photography_spots","Best Photo Spots","#6366F1"),("sunrise_spots","Best Sunrise/Sunset","#D97706"),
     ]
     cols=st.columns(2)
     for i,(key,title,color) in enumerate(secs):
         items=insights.get(key,[])
         if items:
             with cols[i%2]:
-                items_html=''.join(f'<li style="padding:0.25rem 0;color:#374151;font-size:0.88rem;line-height:1.5;">{esc(item)}</li>' for item in items)
-                st.markdown(f"""<div class="anim-fade-up" style="background:#fff;border:1.5px solid #E5DEFF;border-left:4px solid {color};border-radius:14px;
+                items_html=''.join(f'<li style="padding:0.25rem 0;color:#334155;font-size:0.88rem;line-height:1.5;">{esc(item)}</li>' for item in items)
+                st.markdown(f"""<div class="anim-fade-up" style="background:#fff;border:1.5px solid #E2E8F0;border-left:4px solid {color};border-radius:14px;
                 padding:1rem;margin-bottom:0.6rem;box-shadow:0 1px 4px rgba(124,58,237,0.05);">
                 <div style="font-weight:700;color:{color};margin-bottom:0.5rem;font-size:0.95rem;">{title}</div>
                 <ul style="margin:0;padding-left:1rem;">{items_html}</ul></div>""", unsafe_allow_html=True)
@@ -1428,23 +1384,23 @@ def render_insights(insights):
 # ─── TRAVEL TIPS ──────────────────────────────────────────────────────────────
 
 def render_tips(tips, carry, best_times):
-    section_header("Travel Tips & Essentials","✈️",color="#4338CA",bg="#EEF2FF",border="#C7D2FE")
+    section_header("Travel Tips & Essentials", color="#4338CA")
 
     if tips:
-        st.markdown('<div style="font-weight:700;color:#1E1B4B;margin-bottom:0.4rem;">📝 Travel Tips</div>', unsafe_allow_html=True)
-        tips_html = ''.join(f'<div style="padding:0.4rem 0.6rem;background:#EEF2FF;border-left:3px solid #6366F1;border-radius:0 8px 8px 0;margin-bottom:0.3rem;font-size:0.88rem;color:#374151;">{esc(t)}</div>' for t in tips)
+        st.markdown('<div style="font-weight:700;color:#0F172A;margin-bottom:0.4rem;">📝 Travel Tips</div>', unsafe_allow_html=True)
+        tips_html = ''.join(f'<div style="padding:0.4rem 0.6rem;background:#EEF2FF;border-left:3px solid #4F46E5;border-radius:0 8px 8px 0;margin-bottom:0.3rem;font-size:0.88rem;color:#334155;">{esc(t)}</div>' for t in tips)
         st.markdown(tips_html, unsafe_allow_html=True)
         st.markdown("")
 
     if carry:
-        st.markdown('<div style="font-weight:700;color:#1E1B4B;margin-bottom:0.4rem;">🎒 Things to Carry</div>', unsafe_allow_html=True)
-        carry_html = ''.join(f'<div style="padding:0.4rem 0.6rem;background:#EEF2FF;border-left:3px solid #8B5CF6;border-radius:0 8px 8px 0;margin-bottom:0.3rem;font-size:0.88rem;color:#374151;">{esc(c)}</div>' for c in carry)
+        st.markdown('<div style="font-weight:700;color:#0F172A;margin-bottom:0.4rem;">🎒 Things to Carry</div>', unsafe_allow_html=True)
+        carry_html = ''.join(f'<div style="padding:0.4rem 0.6rem;background:#EEF2FF;border-left:3px solid #6366F1;border-radius:0 8px 8px 0;margin-bottom:0.3rem;font-size:0.88rem;color:#334155;">{esc(c)}</div>' for c in carry)
         st.markdown(carry_html, unsafe_allow_html=True)
         st.markdown("")
 
     if best_times:
-        st.markdown('<div style="font-weight:700;color:#1E1B4B;margin-bottom:0.4rem;">⏰ Best Times to Visit</div>', unsafe_allow_html=True)
-        bt_html = ''.join(f'<div style="padding:0.4rem 0.6rem;background:#FEF3C7;border-left:3px solid #F59E0B;border-radius:0 8px 8px 0;margin-bottom:0.3rem;font-size:0.88rem;color:#374151;">{esc(b)}</div>' for b in best_times)
+        st.markdown('<div style="font-weight:700;color:#0F172A;margin-bottom:0.4rem;">⏰ Best Times to Visit</div>', unsafe_allow_html=True)
+        bt_html = ''.join(f'<div style="padding:0.4rem 0.6rem;background:#FEF3C7;border-left:3px solid #F59E0B;border-radius:0 8px 8px 0;margin-bottom:0.3rem;font-size:0.88rem;color:#334155;">{esc(b)}</div>' for b in best_times)
         st.markdown(bt_html, unsafe_allow_html=True)
 
 
@@ -1464,7 +1420,7 @@ def render_overview(itin, req):
         ("💰", f"${req.get('budget',0):,.0f} budget"),
         ("🎯", ", ".join(req.get("interests",[]))[:40]),
     ]
-    stats_html = ''.join(f'<span style="display:inline-flex;align-items:center;gap:0.3rem;background:#F5F0FF;border:1px solid #DDD6FE;padding:0.3rem 0.7rem;border-radius:50px;font-size:0.82rem;color:#7C3AED;font-weight:500;margin:0.15rem;">{ic} {txt}</span>' for ic,txt in stats)
+    stats_html = ''.join(f'<span style="display:inline-flex;align-items:center;gap:0.3rem;background:#F8FAFC;border:1px solid #E2E8F0;padding:0.3rem 0.7rem;border-radius:50px;font-size:0.82rem;color:#4F46E5;font-weight:500;margin:0.15rem;">{ic} {txt}</span>' for ic,txt in stats)
     st.markdown(f'<div style="margin-top:0.8rem;">{stats_html}</div>', unsafe_allow_html=True)
 
 
@@ -1484,8 +1440,8 @@ def export_pdf(itin, req):
     path=Path(__file__).parent.parent/"trip_itinerary.pdf"
     doc=SimpleDocTemplate(str(path),pagesize=A4,topMargin=18*mm,bottomMargin=18*mm,leftMargin=18*mm,rightMargin=18*mm)
     styles=getSampleStyleSheet()
-    PUR=HexColor("#7C3AED"); PURL=HexColor("#EDE9FE"); PUD=HexColor("#4C1D95")
-    TXT=HexColor("#1E1B4B"); GRAY=HexColor("#6B7280"); W=HexColor("#FFFFFF")
+    PUR=HexColor("#4F46E5"); PURL=HexColor("#F1F5F9"); PUD=HexColor("#4C1D95")
+    TXT=HexColor("#0F172A"); GRAY=HexColor("#64748B"); W=HexColor("#FFFFFF")
     BLU=HexColor("#EFF6FF"); BLUD=HexColor("#1E40AF"); GRN=HexColor("#DCFCE7"); GRND=HexColor("#166534")
     ORG=HexColor("#FFEDD5"); ORGD=HexColor("#9A3412"); SKY=HexColor("#E0F2FE"); SKYD=HexColor("#0C4A6E")
     PNK=HexColor("#FFF1F2")
@@ -1513,12 +1469,12 @@ def export_pdf(itin, req):
     def card(flowables):
         inner=[[f] for f in flowables]
         t=Table(inner,colWidths=[doc.width-6*mm])
-        t.setStyle(TableStyle([("BACKGROUND",(0,0),(-1,-1),W),("BOX",(0,0),(-1,-1),0.5,HexColor("#EDE9FE")),
+        t.setStyle(TableStyle([("BACKGROUND",(0,0),(-1,-1),W),("BOX",(0,0),(-1,-1),0.5,HexColor("#F1F5F9")),
             ("LEFTPADDING",(0,0),(-1,-1),10),("RIGHTPADDING",(0,0),(-1,-1),10),
             ("TOPPADDING",(0,0),(0,0),8),("BOTTOMPADDING",(-1,-1),(-1,-1),8)]))
         story.append(t); story.append(Spacer(1,2*mm))
 
-    def lnk(url,label): return f'<a href="{url}" color="#7C3AED"><u>{label}</u></a>'
+    def lnk(url,label): return f'<a href="{url}" color="#4F46E5"><u>{label}</u></a>'
 
     story.append(Paragraph(f"{dest_flag(dest)} {dest}",s_title))
     story.append(Paragraph(f"{src} → {dest} | {days} days | {travelers} travelers | ${budget:,.0f} | {', '.join(interests)}",s_sub))
@@ -1543,7 +1499,7 @@ def export_pdf(itin, req):
 
     hotels=itin.get("recommended_hotels",[])
     if hotels:
-        bar("Recommended Hotels","🏨",bg=HexColor("#6366F1"),fg=W)
+        bar("Recommended Hotels","🏨",bg=HexColor("#4F46E5"),fg=W)
         for h in hotels:
             lines=[Paragraph(f"<b>{esc(h.get('name',''))}</b> | ⭐ {h.get('rating',0)}/5 | ${h.get('price_per_night',0):,.0f}/night",s_h3)]
             lt=f"📍 {esc(h.get('location',''))}"
@@ -1562,11 +1518,11 @@ def export_pdf(itin, req):
 
     attrs=itin.get("attractions",[])
     if attrs:
-        bar("Top Attractions","🎯",bg=HexColor("#EC4899"),fg=W)
+        bar("Top Attractions","🎯",bg=HexColor("#DB2777"),fg=W)
         for a in attrs:
             lt=f"<b>{esc(a.get('name',''))}</b>"
             if a.get("rating"): lt+=f" | ⭐ {a['rating']}"
-            if a.get("category"): lt+=f" | <font color='#6366F1'>[{esc(a['category'])}]</font>"
+            if a.get("category"): lt+=f" | <font color='#4F46E5'>[{esc(a['category'])}]</font>"
             lines=[Paragraph(lt,s_h3)]
             if a.get("description"): lines.append(Paragraph(esc(a["description"]),s_body))
             dp=[]
@@ -1600,7 +1556,7 @@ def export_pdf(itin, req):
 
     trans=itin.get("transport_options",[])
     if trans:
-        bar("Getting Around","🚗",bg=HexColor("#8B5CF6"),fg=W)
+        bar("Getting Around","🚗",bg=HexColor("#6366F1"),fg=W)
         for t in trans:
             lines=[Paragraph(f"<b>{esc(t.get('mode','').title())}</b>",s_h3)]
             if t.get("description"): lines.append(Paragraph(esc(t["description"]),s_body))
@@ -1608,7 +1564,7 @@ def export_pdf(itin, req):
             if t.get("estimated_time"): d.append(f"⏱️ {esc(t['estimated_time'])}")
             if t.get("estimated_cost"): d.append(f"💵 {esc(t['estimated_cost'])}")
             if d: lines.append(Paragraph(" | ".join(d),s_small))
-            if t.get("tips"): lines.append(Paragraph(f"<font color='#7C3AED'>💡 {esc(t['tips'])}</font>",s_small))
+            if t.get("tips"): lines.append(Paragraph(f"<font color='#4F46E5'>💡 {esc(t['tips'])}</font>",s_small))
             card(lines)
 
     bd=itin.get("budget",{})
@@ -1641,7 +1597,7 @@ def export_pdf(itin, req):
             story.append(Paragraph(f"<b>Day {dn}: {esc(title)}</b> | <font color='#059669'>Est. ${cost:,.0f}</font>",s_h2))
             for lbl,content in [("🌅 Morning",d.get("morning","")),("☀️ Afternoon",d.get("afternoon","")),
                 ("🌆 Evening",d.get("evening","")),("🌙 Night",d.get("night",""))]:
-                if content: story.append(Paragraph(f"<font color='#7C3AED'><b>{lbl}:</b></font> {esc(content)}",s_body))
+                if content: story.append(Paragraph(f"<font color='#4F46E5'><b>{lbl}:</b></font> {esc(content)}",s_body))
             ml=[]
             if d.get("lunch"): ml.append(f"<b>🍽️ Lunch:</b> {esc(d['lunch'])}")
             if d.get("dinner"): ml.append(f"<b>🍷 Dinner:</b> {esc(d['dinner'])}")
@@ -1650,7 +1606,7 @@ def export_pdf(itin, req):
 
     ai=itin.get("ai_insights",{})
     if ai:
-        bar("AI Travel Insights","🧠",bg=HexColor("#7C3AED"),fg=W)
+        bar("AI Travel Insights","🧠",bg=HexColor("#4F46E5"),fg=W)
         for key,title in [("hidden_gems","💎 Hidden Gems"),("tourist_traps","⚠️ Tourist Traps"),
             ("local_food","🍜 Must-Try Local Food"),("safety_tips","🛡️ Safety Tips"),
             ("money_tips","💵 Money-Saving Tips"),("scam_alerts","🚨 Scam Alerts"),
@@ -1663,7 +1619,7 @@ def export_pdf(itin, req):
 
     pk=itin.get("packing_checklist",{})
     if pk:
-        bar("Packing Checklist","🧳",bg=HexColor("#EC4899"),fg=W)
+        bar("Packing Checklist","🧳",bg=HexColor("#DB2777"),fg=W)
         for grp,items in pk.items():
             if items:
                 story.append(Paragraph(f"<b>{grp.title()}</b>",s_h3))

@@ -146,10 +146,38 @@ def _clean_text(text: str) -> str:
         return text
     text = re.sub(r"```json.*?```", "", text, flags=re.DOTALL)
     text = re.sub(r"```\s*.*?```", "", text, flags=re.DOTALL)
-    text = re.sub(r'\{[^{}]*"[^"]*"[^{}]*\}', "", text)
-    text = re.sub(r"\[[\s\S]{0,200}\]", "", text)
+    for _ in range(5):
+        prev = text
+        text = re.sub(r'\{[^{}]{0,500}\}', "", text)
+        if text == prev:
+            break
+    text = re.sub(r'\[[\s\S]{0,300}\]', "", text)
+    text = re.sub(r'"[a-zA-Z_]+"\s*:\s*(?:,|\}|null|""|0|\[\])', "", text)
+    text = re.sub(r'\{\s*,', "{", text)
+    text = re.sub(r',\s*\}', "}", text)
+    text = re.sub(r'\{\s*\}', "", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
+
+
+def _sanitize_field(val) -> str:
+    """Strip JSON fragments, HTML, and junk from a text field value."""
+    if not val:
+        return ""
+    s = str(val)
+    s = _clean_text(s)
+    s = re.sub(r"<[^>]*>", "", s)
+    s = re.sub(r"[<>]", "", s)
+    s = re.sub(r"&[a-zA-Z]+;", " ", s)
+    s = re.sub(r"\s+", " ", s)
+    return s.strip()
+
+
+def _sanitize_list(vals) -> list:
+    """Sanitize each string item in a list, drop empties."""
+    if not vals or not isinstance(vals, list):
+        return []
+    return [s for v in vals if (s := _sanitize_field(v))]
 
 
 def _parse_itinerary(raw_output: str, request: TripRequest, pre_fetched: dict = None) -> ItineraryResponse:
@@ -429,7 +457,7 @@ def _build_response_from_dict(data: dict, raw_output: str, request: TripRequest,
         condition=w.get("condition", "N/A"),
         description=w.get("description", ""),
         wind_speed=w.get("wind_speed", 0),
-        rain_chance=w.get("rain_chance"),
+        rain_chance=int(rain_val) if (rain_val := w.get("rain_chance")) is not None else None,
         sunrise=w.get("sunrise", ""),
         sunset=w.get("sunset", ""),
         icon=_weather_icon(w.get("condition", "")),
@@ -447,14 +475,22 @@ def _build_response_from_dict(data: dict, raw_output: str, request: TripRequest,
 
     transport = []
     for t in data.get("transport_options", []):
-        if isinstance(t, dict):
+        if isinstance(t, dict) and t.get("mode"):
             transport.append(TransportOption(
-                mode=t.get("mode", ""),
-                description=t.get("description", ""),
-                estimated_time=t.get("estimated_time", ""),
-                estimated_cost=t.get("estimated_cost", ""),
-                tips=t.get("tips", ""),
+                mode=_sanitize_field(t.get("mode", "")),
+                description=_sanitize_field(t.get("description", "")),
+                estimated_time=_sanitize_field(t.get("estimated_time", "")),
+                estimated_cost=_sanitize_field(t.get("estimated_cost", "")),
+                tips=_sanitize_field(t.get("tips", "")),
             ))
+
+    if len(transport) < 2:
+        dest = request.destination
+        transport = [
+            TransportOption(mode="Airport Transfer", description=f"Pre-booked taxi or ride-share from the airport to {dest}", estimated_time="30-60 min", estimated_cost="$15-40", tips="Book in advance for better rates"),
+            TransportOption(mode="Public Transport", description=f"Local buses and metro in {dest}", estimated_time="Varies", estimated_cost="$1-5 per ride", tips="Get a day pass if available"),
+            TransportOption(mode="Walking & Cycling", description=f"Explore {dest} on foot or rent a bicycle", estimated_time="Flexible", estimated_cost="Free - $10/day", tips="Great for short distances and sightseeing"),
+        ]
 
     budget_data = data.get("budget") or {}
     budget_info = BudgetBreakdown(
@@ -477,15 +513,15 @@ def _build_response_from_dict(data: dict, raw_output: str, request: TripRequest,
         if isinstance(d, dict):
             daily_plans.append(DayPlan(
                 day_number=d.get("day_number", len(daily_plans) + 1),
-                title=d.get("title", ""),
-                morning=d.get("morning", ""),
-                afternoon=d.get("afternoon", ""),
-                evening=d.get("evening", ""),
-                night=d.get("night", ""),
-                lunch=d.get("lunch", ""),
-                dinner=d.get("dinner", ""),
+                title=_sanitize_field(d.get("title", "")),
+                morning=_sanitize_field(d.get("morning", "")),
+                afternoon=_sanitize_field(d.get("afternoon", "")),
+                evening=_sanitize_field(d.get("evening", "")),
+                night=_sanitize_field(d.get("night", "")),
+                lunch=_sanitize_field(d.get("lunch", "")),
+                dinner=_sanitize_field(d.get("dinner", "")),
                 estimated_daily_cost=float(d.get("estimated_daily_cost", 0)),
-                highlights=d.get("highlights", []),
+                highlights=_sanitize_list(d.get("highlights", [])),
             ))
 
     # Validate daily_plans count matches request.num_days; pad if needed
@@ -511,16 +547,39 @@ def _build_response_from_dict(data: dict, raw_output: str, request: TripRequest,
         logger.info("Trimming daily_plans from %d to %d days", len(daily_plans), target_days)
         daily_plans = daily_plans[:target_days]
 
+    # Detect duplicate days and diversify them
+    dest = request.destination
+    day_templates = [
+        {"title": "Historic Heart & Culture", "morning": f"Visit the historic old town and key landmarks in {dest}", "afternoon": f"Explore museums and cultural sites in {dest}", "evening": f"Enjoy a sunset walk and dinner at a popular local restaurant in {dest}", "highlights": ["Historic landmarks", "Cultural immersion"]},
+        {"title": "Nature & Adventure", "morning": f"Take a morning nature walk or park visit near {dest}", "afternoon": f"Try an adventure activity or outdoor excursion around {dest}", "evening": f"Relax at a rooftop bar or café with views of {dest}", "highlights": ["Outdoor adventure", "Scenic views"]},
+        {"title": "Food & Local Life", "morning": f"Visit a local market or food street in {dest}", "afternoon": f"Take a cooking class or food tour in {dest}", "evening": f"Experience the nightlife or evening entertainment in {dest}", "highlights": ["Food tour", "Local experience"]},
+        {"title": "Hidden Gems & Off the Beaten Path", "morning": f"Discover lesser-known spots and neighborhoods in {dest}", "afternoon": f"Visit a unique local attraction or workshop in {dest}", "evening": f"Enjoy a cultural performance or live music in {dest}", "highlights": ["Hidden gems", "Authentic experiences"]},
+        {"title": "Relaxation & Leisure", "morning": f"Enjoy a slow morning at a café or garden in {dest}", "afternoon": f"Take a leisurely stroll along scenic routes in {dest}", "evening": f"Indulge in a fine dining experience in {dest}", "highlights": ["Relaxation", "Scenic beauty"]},
+    ]
+    seen_signatures = set()
+    for dp in daily_plans:
+        sig = (dp.morning or "")[:60] + "|" + (dp.afternoon or "")[:60]
+        seen_signatures.add(sig)
+    if len(seen_signatures) <= 1 and len(daily_plans) > 1:
+        logger.info("All daily plans are identical; diversifying")
+        for i, dp in enumerate(daily_plans):
+            tmpl = day_templates[i % len(day_templates)]
+            dp.title = f"Day {dp.day_number}: {tmpl['title']}"
+            dp.morning = tmpl["morning"]
+            dp.afternoon = tmpl["afternoon"]
+            dp.evening = tmpl["evening"]
+            dp.highlights = tmpl["highlights"]
+
     ai_insights_data = data.get("ai_insights") or {}
     ai_insights = AIInsights(
-        hidden_gems=ai_insights_data.get("hidden_gems", []),
-        tourist_traps=ai_insights_data.get("tourist_traps", []),
-        local_food=ai_insights_data.get("local_food", []),
-        safety_tips=ai_insights_data.get("safety_tips", []),
-        money_tips=ai_insights_data.get("money_tips", []),
-        scam_alerts=ai_insights_data.get("scam_alerts", []),
-        photography_spots=ai_insights_data.get("photography_spots", []),
-        sunrise_spots=ai_insights_data.get("sunrise_spots", []),
+        hidden_gems=_sanitize_list(ai_insights_data.get("hidden_gems", [])),
+        tourist_traps=_sanitize_list(ai_insights_data.get("tourist_traps", [])),
+        local_food=_sanitize_list(ai_insights_data.get("local_food", [])),
+        safety_tips=_sanitize_list(ai_insights_data.get("safety_tips", [])),
+        money_tips=_sanitize_list(ai_insights_data.get("money_tips", [])),
+        scam_alerts=_sanitize_list(ai_insights_data.get("scam_alerts", [])),
+        photography_spots=_sanitize_list(ai_insights_data.get("photography_spots", [])),
+        sunrise_spots=_sanitize_list(ai_insights_data.get("sunrise_spots", [])),
     )
 
     packing = data.get("packing_checklist") or {}
@@ -536,8 +595,8 @@ def _build_response_from_dict(data: dict, raw_output: str, request: TripRequest,
     score_val, score_reasons = _calculate_trip_score(request, weather_info, hotels, attractions, restaurants, transport, budget_info, daily_plans, ai_insights, packing, data.get("travel_tips", []))
 
     return ItineraryResponse(
-        trip_summary=data.get("trip_summary", "")[:3000],
-        destination_overview=data.get("destination_overview", f"Trip from {request.source_city} to {request.destination} for {request.num_days} days."),
+        trip_summary=_clean_text(data.get("trip_summary", ""))[:3000],
+        destination_overview=_sanitize_field(data.get("destination_overview", "")),
         weather_summary=weather_info,
         recommended_hotels=hotels,
         attractions=attractions,
@@ -546,10 +605,10 @@ def _build_response_from_dict(data: dict, raw_output: str, request: TripRequest,
         budget=budget_info,
         daily_plans=daily_plans,
         ai_insights=ai_insights,
-        travel_tips=data.get("travel_tips", []),
-        things_to_carry=data.get("things_to_carry", []),
+        travel_tips=_sanitize_list(data.get("travel_tips", [])),
+        things_to_carry=_sanitize_list(data.get("things_to_carry", [])),
         packing_checklist=packing,
-        best_times=data.get("best_times", []),
+        best_times=_sanitize_list(data.get("best_times", [])),
         trip_score=score_val,
         score_reasons=[{"text": r[0], "type": r[1]} for r in score_reasons],
     )
@@ -561,18 +620,18 @@ def _parse_hotels(data: dict, request: TripRequest, pre_fetched: dict) -> list[H
     for h in data.get("recommended_hotels") or data.get("hotels") or []:
         if isinstance(h, dict) and h.get("name"):
             hotels.append(HotelRecommendation(
-                name=h.get("name", "Hotel"),
+                name=_sanitize_field(h.get("name", "Hotel"))[:80],
                 rating=float(h.get("rating", 0)),
                 price_per_night=float(h.get("price_per_night", 0)),
-                location=h.get("location", ""),
-                reason=h.get("reason", ""),
-                amenities=h.get("amenities", []),
-                description=h.get("description", ""),
-                pros=h.get("pros", []),
-                cons=h.get("cons", []),
+                location=_sanitize_field(h.get("location", "")),
+                reason=_sanitize_field(h.get("reason", "")),
+                amenities=_sanitize_list(h.get("amenities", [])),
+                description=_sanitize_field(h.get("description", "")),
+                pros=_sanitize_list(h.get("pros", [])),
+                cons=_sanitize_list(h.get("cons", [])),
                 maps_url=validate_url(h.get("maps_url")) or _maps_url(h.get("name", "hotel"), request.destination),
                 website_url=validate_url(h.get("website_url")),
-                distance_from_center=h.get("distance_from_center", ""),
+                distance_from_center=_sanitize_field(h.get("distance_from_center", "")),
             ))
 
     # Supplement with pre-fetched SerpAPI data if we have fewer than 3
@@ -603,14 +662,14 @@ def _parse_attractions(data: dict, request: TripRequest, pre_fetched: dict) -> l
     for a in data.get("attractions") or []:
         if isinstance(a, dict) and a.get("name"):
             attractions.append(AttractionRecommendation(
-                name=a.get("name", ""),
-                description=a.get("description", ""),
-                category=a.get("category", ""),
+                name=_sanitize_field(a.get("name", ""))[:80],
+                description=_sanitize_field(a.get("description", "")),
+                category=_sanitize_field(a.get("category", "")),
                 rating=float(a.get("rating", 0)),
-                entry_fee=a.get("entry_fee", ""),
-                opening_hours=a.get("opening_hours", ""),
-                time_required=a.get("time_required", ""),
-                best_time=a.get("best_time", ""),
+                entry_fee=_sanitize_field(a.get("entry_fee", "")),
+                opening_hours=_sanitize_field(a.get("opening_hours", "")),
+                time_required=_sanitize_field(a.get("time_required", "")),
+                best_time=_sanitize_field(a.get("best_time", "")),
                 maps_url=validate_url(a.get("maps_url")) or _maps_url(a.get("name", ""), request.destination),
                 website_url=validate_url(a.get("website_url")),
             ))
@@ -640,12 +699,12 @@ def _parse_restaurants(data: dict, request: TripRequest, pre_fetched: dict) -> l
     for r in data.get("restaurants") or []:
         if isinstance(r, dict) and r.get("name"):
             restaurants.append(RestaurantRecommendation(
-                name=r.get("name", ""),
-                cuisine=r.get("cuisine", ""),
+                name=_sanitize_field(r.get("name", ""))[:80],
+                cuisine=_sanitize_field(r.get("cuisine", "")),
                 rating=float(r.get("rating", 0)),
-                price_range=r.get("price_range", ""),
-                description=r.get("description", ""),
-                opening_hours=r.get("opening_hours", ""),
+                price_range=_sanitize_field(r.get("price_range", "")),
+                description=_sanitize_field(r.get("description", "")),
+                opening_hours=_sanitize_field(r.get("opening_hours", "")),
                 maps_url=validate_url(r.get("maps_url")) or _maps_url(r.get("name", ""), request.destination),
                 website_url=validate_url(r.get("website_url")),
             ))
@@ -702,7 +761,7 @@ def _build_from_pre_fetched(raw_output: str, request: TripRequest, pre_fetched: 
         condition=real_weather.get("condition", "N/A"),
         description=real_weather.get("description", ""),
         wind_speed=real_weather.get("wind_speed", 0),
-        rain_chance=real_weather.get("rain_chance"),
+        rain_chance=int(rain_val) if (rain_val := real_weather.get("rain_chance")) is not None else None,
         sunrise=real_weather.get("sunrise", ""),
         sunset=real_weather.get("sunset", ""),
         icon=_weather_icon(real_weather.get("condition", "")),

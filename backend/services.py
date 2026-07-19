@@ -51,8 +51,7 @@ class WeatherService:
                 "error": False,
             }
 
-            rain_data = data.get("rain", {})
-            result["rain_chance"] = rain_data.get("1h", rain_data.get("3h", None))
+            result["rain_chance"] = None
 
             await self._enrich_with_forecast(city, result)
 

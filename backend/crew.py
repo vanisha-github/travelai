@@ -57,8 +57,7 @@ def _fetch_real_weather(city: str) -> dict:
             "sunset": datetime.fromtimestamp(sunset_ts).strftime("%I:%M %p") if sunset_ts else "",
         }
 
-        rain_data = data.get("rain", {})
-        result["rain_chance"] = rain_data.get("1h", rain_data.get("3h", None))
+        result["rain_chance"] = None
 
         try:
             forecast_url = "https://api.openweathermap.org/data/2.5/forecast"
@@ -107,16 +106,25 @@ def _fetch_serp_data(query: str) -> list[dict]:
             data = resp.json()
 
         results = []
-        for item in data.get("organic_results", [])[:6]:
+        junk_patterns = ["wikipedia.org/wiki/Top", "disambiguation", "may refer to",
+                         "Wiktionary", "Wikimedia", "Wikidata"]
+        for item in data.get("organic_results", [])[:8]:
+            title = item.get("title", "")
+            snippet = item.get("snippet", "")
+            link = item.get("link", "")
+            if any(p.lower() in (title + snippet + link).lower() for p in junk_patterns):
+                continue
+            if len(snippet) < 15:
+                continue
             results.append({
-                "title": item.get("title", ""),
-                "snippet": item.get("snippet", ""),
-                "link": item.get("link", ""),
+                "title": title,
+                "snippet": snippet,
+                "link": link,
                 "rating": item.get("rating"),
                 "address": item.get("address"),
                 "thumbnail": item.get("thumbnail", ""),
             })
-        return results
+        return results[:6]
     except Exception as e:
         logger.warning("SerpAPI fetch failed: %s", e)
         return []
