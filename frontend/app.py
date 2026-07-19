@@ -6,6 +6,7 @@ import time
 import urllib.parse
 import re
 import plotly.graph_objects as go
+from pathlib import Path
 from datetime import datetime
 import db
 
@@ -1297,8 +1298,8 @@ def render_transport(transport):
         "walking":"🚶","rental":"🚗","tram":"🚊","train":"🚆","ferry":"⛴️","bicycle":"🚲"}
     for t in transport:
         mode=t.get("mode",""); icon=mi.get(mode.lower(),"🚗") if mode else "🚗"
-        desc=t.get("description",""); t_est=t.get("estimated_time","")
-        c_est=t.get("estimated_cost",""); tips=t.get("tips","")
+        desc=sanitize_text(t.get("description","")); t_est=sanitize_text(t.get("estimated_time",""))
+        c_est=sanitize_text(t.get("estimated_cost","")); tips=sanitize_text(t.get("tips",""))
 
         c1,c2=st.columns([1,4])
         with c1:
