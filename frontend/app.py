@@ -2,13 +2,10 @@ import streamlit as st
 import requests
 import json
 import os
-import subprocess
-import sys
 import time
 import urllib.parse
 import re
 import plotly.graph_objects as go
-from pathlib import Path
 from datetime import datetime
 import db
 
@@ -18,24 +15,6 @@ st.set_page_config(page_title="AI Travel Planner", page_icon="✈️", layout="w
 
 
 # ─── BACKEND HELPERS ──────────────────────────────────────────────────────────
-
-def ensure_backend_running() -> bool:
-    try:
-        resp = requests.get(f"{BACKEND_URL}/health", timeout=3)
-        return resp.status_code == 200
-    except (requests.ConnectionError, requests.Timeout):
-        return False
-
-def start_backend():
-    backend_main = Path(__file__).parent.parent / "backend" / "main.py"
-    if backend_main.exists():
-        subprocess.Popen(
-            [sys.executable, str(backend_main)],
-            cwd=str(backend_main.parent),
-            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0,
-        )
-        time.sleep(4)
-    return ensure_backend_running()
 
 def plan_trip_api(trip_data: dict) -> dict:
     try:
@@ -1865,8 +1844,4 @@ def main():
 
 
 if __name__=="__main__":
-    if not ensure_backend_running():
-        st.info("🔄 Starting backend server...")
-        if start_backend(): st.success("✅ Backend started!"); time.sleep(1)
-        else: st.warning("⚠️ Backend not available. Please start manually.")
     main()
