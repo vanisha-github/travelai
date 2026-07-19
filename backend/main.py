@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import re
@@ -68,7 +69,7 @@ async def plan_trip(request: TripRequest):
 
     try:
         crew, context = build_crew(request)
-        result = crew.kickoff()
+        result = await asyncio.to_thread(crew.kickoff)
 
         raw_output = str(result)
         logger.info("Crew execution completed in %.2fs", time.time() - start)

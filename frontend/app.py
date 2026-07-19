@@ -636,7 +636,7 @@ def render_welcome():
         name = st.text_input("Your Name", placeholder="e.g. Alex", label_visibility="collapsed")
         st.markdown("<div style='margin-top:0.2rem;'></div>", unsafe_allow_html=True)
 
-        if st.button("Start Planning", type="primary", use_container_width=True, key="start_btn"):
+        if st.button("Start Planning", type="primary", width="stretch", key="start_btn"):
             if name and name.strip():
                 st.session_state["user_name"] = name.strip()
                 st.rerun()
@@ -799,11 +799,11 @@ def render_landing():
                 </div>""", unsafe_allow_html=True)
                 bc1, bc2 = st.columns(2)
                 with bc1:
-                    if st.button("👁️ View", key=f"lv_{trip_id}", use_container_width=True):
+                    if st.button("👁️ View", key=f"lv_{trip_id}", width="stretch"):
                         st.session_state.itinerary = trip.get("itinerary",{})
                         st.session_state.trip_request = trip.get("request",{})
                 with bc2:
-                    if st.button("🗑️ Delete", key=f"ld_{trip_id}", use_container_width=True):
+                    if st.button("🗑️ Delete", key=f"ld_{trip_id}", width="stretch"):
                         delete_saved_trip(trip_id)
                         st.rerun()
 
@@ -842,7 +842,7 @@ display:inline-flex;align-items:center;justify-content:center;font-size:1.4rem;b
         hotel_pref = st.radio("Tier",["budget","standard","luxury"],index=1,horizontal=True,label_visibility="collapsed")
         st.markdown('</div>', unsafe_allow_html=True)
 
-        st.button("✨ Generate Itinerary",type="primary",use_container_width=True,key="gen_btn")
+        st.button("✨ Generate Itinerary",type="primary",width="stretch",key="gen_btn")
         plan_clicked = st.session_state.get("gen_btn", False)
 
         st.markdown("---")
@@ -873,7 +873,7 @@ display:inline-flex;align-items:center;justify-content:center;font-size:1.4rem;b
                     st.markdown('<div style="border-bottom:1px solid #F3F4F6;margin:0.4rem 0;"></div>', unsafe_allow_html=True)
 
         st.markdown("---")
-        if st.button("🔄 Change User", use_container_width=True, type="secondary"):
+        if st.button("🔄 Change User", width="stretch", type="secondary"):
             if "user_name" in st.session_state:
                 del st.session_state["user_name"]
             for k in ["itinerary", "trip_request"]:
@@ -1251,7 +1251,7 @@ def render_budget(budget, req):
             textinfo="label+percent",textfont=dict(size=11))])
         fig.update_layout(showlegend=False,margin=dict(t=15,b=15,l=15,r=15),
             paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",font=dict(color="#0F172A"),height=280)
-        st.plotly_chart(fig,use_container_width=True)
+        st.plotly_chart(fig,width="stretch")
     with c2:
         status_bg = "linear-gradient(135deg,#22C55E,#16A34A)" if within else "linear-gradient(135deg,#EF4444,#DC2626)"
         status_txt = "✅ Within Budget" if within else "⚠️ Over Budget"
@@ -1808,8 +1808,7 @@ def main():
         mObs.observe(document.body, {childList:true, subtree:true});
         })();
         </script>"""
-        import streamlit.components.v1 as components
-        components.html(tab_scroll_js, height=0)
+        st.iframe(srcdoc=tab_scroll_js, height=0, width=0)
 
         tabs=st.tabs(["📋 Overview","🏨 Hotels","🎯 Attractions","📅 Itinerary","🌤️ Weather",
                        "💰 Budget","🍽️ Food","🚗 Transport","✈️ Travel Tips",
@@ -1840,24 +1839,24 @@ def main():
         with tabs[11]:
             st.markdown("### 📥 Download Your Travel Brochure")
             st.markdown("The PDF mirrors the website design with colored section bars, cards, clickable links, and all trip data.")
-            if st.button("📄 Generate & Download PDF",type="primary",use_container_width=True):
+            if st.button("📄 Generate & Download PDF",type="primary",width="stretch"):
                 with st.spinner("Generating your travel brochure..."):
                     pdf=export_pdf(itin,req)
                 if pdf:
                     with open(pdf,"rb") as f:
                         st.download_button("⬇️ Click to Download",data=f.read(),
-                            file_name=f"{req.get('destination','trip')}_itinerary.pdf",mime="application/pdf",use_container_width=True)
+                            file_name=f"{req.get('destination','trip')}_itinerary.pdf",mime="application/pdf",width="stretch")
                     st.success("✅ PDF generated!")
 
             st.markdown("---")
             c1,c2=st.columns(2)
             with c1:
-                if st.button("💾 Save Trip",use_container_width=True,type="secondary"):
+                if st.button("💾 Save Trip",width="stretch",type="secondary"):
                     trip_id=save_trip_locally(itin,req)
                     st.success(f"✅ Trip saved! ID: {trip_id}")
                     st.rerun()
             with c2:
-                if st.button("🔄 Plan Another Trip",use_container_width=True):
+                if st.button("🔄 Plan Another Trip",width="stretch"):
                     del st.session_state.itinerary
                     del st.session_state.trip_request
                     st.rerun()
